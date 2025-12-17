@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginScreen() {
+  const router = useRouter();
   const { session, isAuthLoading, sendMagicLink, isSendingMagicLink, redirectUri } = useAuth();
   const [email, setEmail] = useState<string>('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -113,6 +114,17 @@ export default function LoginScreen() {
               <Text style={styles.helperText}>
                 We will redirect you to {redirectUri} when you tap the link.
               </Text>
+
+              <TouchableOpacity
+                style={styles.tempNavButton}
+                onPress={() => {
+                  console.log('[Login] Temporary navigation to Today');
+                  router.replace('/today');
+                }}
+                testID="temp-nav-today-button"
+              >
+                <Text style={styles.tempNavButtonText}>Temporary: Go to Today</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -234,6 +246,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 18,
+  },
+  tempNavButton: {
+    marginTop: 12,
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  tempNavButtonText: {
+    color: Colors.text,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   loadingContainer: {
     flex: 1,

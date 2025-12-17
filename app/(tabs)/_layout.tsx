@@ -34,7 +34,7 @@ export default function TabLayout() {
         name="action"
         options={{
           title: 'Action',
-          tabBarIcon: ({ color }) => <Ionicons name="target-outline" size={24} color={color} />
+          tabBarIcon: ({ color }) => <Ionicons name="flag-outline" size={24} color={color} />
 ,
         }}
       />
