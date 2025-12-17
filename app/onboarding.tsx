@@ -240,7 +240,7 @@ export default function OnboardingScreen() {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {step === 'name' && (
             <View style={styles.stepContainer}>
-              <Text style={styles.question}>What’s your name?</Text>
+              <Text style={styles.question}>What's your name?</Text>
               <TextInput
                 style={styles.textInput}
                 placeholder="Enter your name"
@@ -377,7 +377,7 @@ export default function OnboardingScreen() {
               <View style={styles.encouragementContainer}>
                 <Animated.View style={[styles.encouragementContent, { opacity: fadeAnim }]}>
                   <Text style={styles.encouragementText}>
-                    Thank you for sharing that. You’re in the right place.
+                    Thank you for sharing that. You're in the right place.
                   </Text>
                   <Text style={styles.encouragementText}>
                     Journify is here to guide you with clarity, simplicity, and small, meaningful steps.

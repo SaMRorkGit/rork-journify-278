@@ -1,5 +1,5 @@
 import { Stack, useRouter } from 'expo-router';
-import { BookText, PenSquare } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMemo } from 'react';
@@ -64,7 +64,7 @@ export default function JournalScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
         <View style={styles.header}>
-          <BookText size={32} color={Colors.primary} />
+          <Ionicons name="book-outline" size={32} color={Colors.primary} />
           <Text style={styles.headerTitle}>Journal</Text>
           <Text style={styles.headerSubtitle}>Express your thoughts and reflect</Text>
         </View>
@@ -77,7 +77,7 @@ export default function JournalScreen() {
         >
           <View style={styles.newThoughtContent}>
             <View style={styles.newThoughtIconWrap}>
-              <PenSquare size={20} color={Colors.surface} />
+              <Ionicons name="create-outline" size={20} color={Colors.surface} />
             </View>
             <View style={styles.newThoughtTextGroup}>
               <Text style={styles.newThoughtTitle}>Add a new thought</Text>
@@ -99,20 +99,26 @@ export default function JournalScreen() {
             timelineEntries.map(entry => {
               const monthLabel = getMonthLabel(entry.data.createdAt);
               const dayLabel = getDayLabel(entry.data.createdAt);
-              const moodEmoji = entry.kind === 'checkIn'
-                ? getMoodEmoji(entry.data.mood)
-                : entry.data.mood ? getMoodEmoji(entry.data.mood) : null;
+              const moodEmoji =
+                entry.kind === 'checkIn'
+                  ? getMoodEmoji(entry.data.mood)
+                  : entry.data.mood
+                  ? getMoodEmoji(entry.data.mood)
+                  : null;
 
               const reflectionTypes: string[] = [];
               if (entry.kind === 'checkIn') {
-                reflectionTypes.push(entry.data.type === 'morning' ? 'Morning Intention' : 'Evening Reflection');
+                reflectionTypes.push(
+                  entry.data.type === 'morning' ? 'Morning Intention' : 'Evening Reflection'
+                );
               } else if (entry.data.linkedGoalId || entry.data.tags?.includes('Goal')) {
                 reflectionTypes.push('Goal');
               }
 
-              const contentText = entry.kind === 'checkIn'
-                ? entry.data.reflection ?? ''
-                : entry.data.content;
+              const contentText =
+                entry.kind === 'checkIn'
+                  ? entry.data.reflection ?? ''
+                  : entry.data.content;
 
               const entryContent = (
                 <>
@@ -171,6 +177,7 @@ export default function JournalScreen() {
 }
 
 const styles = StyleSheet.create({
+  // -- styles unchanged --
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -181,7 +188,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 32,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     color: Colors.text,
     marginTop: 12,
   },
@@ -199,13 +206,13 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     paddingHorizontal: 20,
     paddingVertical: 18,
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'center' as const,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   newThoughtContent: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 14,
   },
   newThoughtIconWrap: {
@@ -213,15 +220,15 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   newThoughtTextGroup: {
     gap: 2,
   },
   newThoughtTitle: {
     fontSize: 16,
-    fontWeight: '600' as const,
+    fontWeight: '600',
     color: Colors.text,
   },
   newThoughtSubtitle: {
@@ -241,23 +248,23 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: 12,
     padding: 32,
-    alignItems: 'center' as const,
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
   },
   emptyText: {
     fontSize: 16,
     color: Colors.text,
-    fontWeight: '500' as const,
+    fontWeight: '500',
     marginBottom: 4,
   },
   emptySubtext: {
     fontSize: 14,
     color: Colors.textSecondary,
-    textAlign: 'center' as const,
+    textAlign: 'center',
   },
   entryRow: {
-    flexDirection: 'row' as const,
+    flexDirection: 'row',
     paddingVertical: 18,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: Colors.border,
@@ -265,7 +272,7 @@ const styles = StyleSheet.create({
   },
   dateColumn: {
     width: 48,
-    alignItems: 'center' as const,
+    alignItems: 'center',
   },
   monthLabel: {
     fontSize: 12,
@@ -274,7 +281,7 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     fontSize: 20,
-    fontWeight: '700' as const,
+    fontWeight: '700',
     color: Colors.text,
     marginTop: 2,
   },
@@ -288,16 +295,16 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   metaRow: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between' as const,
-    alignItems: 'center' as const,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     gap: 12,
     marginBottom: 6,
-    flexWrap: 'wrap' as const,
+    flexWrap: 'wrap',
   },
   typeRow: {
-    flexDirection: 'row' as const,
-    flexWrap: 'wrap' as const,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 6,
     flex: 1,
   },
@@ -311,12 +318,12 @@ const styles = StyleSheet.create({
   },
   typePillText: {
     fontSize: 12,
-    fontWeight: '600' as const,
+    fontWeight: '600',
     color: Colors.primary,
   },
   metaInfo: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   metaDate: {

@@ -1,5 +1,5 @@
 import { Stack, useRouter } from 'expo-router';
-import { CheckCircle2, Circle, Award, Sun, Moon, Plus, ChevronDown, ChevronRight, Repeat, Edit2 } from 'lucide-react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, PanResponder, Animated, ActivityIndicator } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,16 +12,9 @@ import Colors from '../../constants/colors';
 
 export default function TodayScreen() {
   const insets = useSafeAreaInsets();
-  const {
-    state,
-    toggleTodo,
-    toggleHabitCompletion,
-    toggleGoalTask,
-    addTodo,
-    calculateXPForLevel,
-    addDailyCheckIn,
-    updateDailyCheckIn,
-  } = useAppState();
+  const appState = useAppState();
+  
+  const { state, toggleTodo, toggleHabitCompletion, toggleGoalTask, addTodo, calculateXPForLevel, addDailyCheckIn, updateDailyCheckIn } = appState;
   const router = useRouter();
   const todos = useTodayTodos();
   const habits = useTodayHabits();
@@ -396,7 +389,7 @@ export default function TodayScreen() {
                           </Text>
                         )}
                         <TouchableOpacity style={styles.editCheckInButton} onPress={handleEditCheckIn}>
-                          <Edit2 size={16} color={Colors.primary} />
+                          <Ionicons name="pencil-outline" size={16} color={Colors.primary} />
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -416,7 +409,7 @@ export default function TodayScreen() {
           <Text style={styles.microCopyText}>Today is a fresh chance for a small win.</Text>
         </View>
 
-        <Text style={styles.todaysActionsTitle}>TODAY’S ACTIONS</Text>
+        <Text style={styles.todaysActionsTitle}>TODAY'S ACTIONS</Text>
         <View style={styles.actionsCard}>
           {(() => {
             const sortedItems = getSortedActions(habits, todos, goalTasks, state);
@@ -678,9 +671,9 @@ function ActionCard({
           testID={`action-card-toggle-${item.id}`}
         >
           {isCompleted ? (
-            <CheckCircle2 size={24} color={Colors.textSecondary} />
+            <Ionicons name="checkmark-circle-outline" size={24} color={Colors.textSecondary} />
           ) : (
-            <Circle size={24} color={Colors.textSecondary} />
+            <Ionicons name="ellipse-outline" size={24} color={Colors.textSecondary} />
           )}
         </TouchableOpacity>
         <TouchableOpacity
@@ -700,9 +693,9 @@ function ActionCard({
           <View style={styles.actionRightContainer}>
             <View style={[styles.actionTag, isHabit ? styles.actionTagHabit : styles.actionTagTask]}>
               {isHabit ? (
-                <Repeat size={12} color="#AF9BFF" style={{ marginRight: 4 }} />
+                <Ionicons name="repeat-outline" size={12} color="#AF9BFF" style={{ marginRight: 4 }} />
               ) : (
-                <CheckCircle2 size={12} color="#4A9DFF" style={{ marginRight: 4 }} />
+                <Ionicons name="checkmark-circle-outline" size={12} color="#4A9DFF" style={{ marginRight: 4 }} />
               )}
               <Text style={[styles.actionTagText, isHabit ? { color: '#AF9BFF' } : { color: '#4A9DFF' }]}> 
                 {isHabit ? 'Habit' : 'Task'}
@@ -748,7 +741,7 @@ function WeekPreview({ isCompletedToday }: { isCompletedToday: boolean }) {
           </Text>
           <View style={[styles.dayCircle, day.isToday && styles.dayCircleToday]}>
             {day.isToday && isCompletedToday ? (
-              <CheckCircle2 size={20} color={Colors.primary} />
+              <Ionicons name="checkmark-circle-outline" size={20} color={Colors.primary} />
             ) : (
               <Text style={[styles.dayNum, day.isToday && styles.dayNumToday]}>
                 {day.dayNum}

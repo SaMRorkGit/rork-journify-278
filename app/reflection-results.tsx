@@ -37,28 +37,16 @@ export default function ReflectionResultsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
-  const { addTodo, state } = useAppState();
+  const appState = useAppState();
+  const { addTodo, state } = appState;
+
+  const reflectionData: ReflectionData = {
+    tasks: params.tasks ? JSON.parse(params.tasks as string) : [],
+    habits: params.habits ? JSON.parse(params.habits as string) : [],
+    goals: params.goals ? JSON.parse(params.goals as string) : [],
+  };
 
   const entryId = typeof params.entryId === 'string' ? params.entryId : undefined;
-
-  const reflectionData: ReflectionData = useMemo(() => {
-    const parseJsonParam = (param: string | string[] | undefined, fallback: string[] = []): string[] => {
-      if (!param) return fallback;
-      try {
-        const parsed = JSON.parse(param as string);
-        return Array.isArray(parsed) ? parsed : fallback;
-      } catch (error) {
-        console.error('[ReflectionResults] Failed to parse param', error);
-        return fallback;
-      }
-    };
-
-    return {
-      tasks: parseJsonParam(params.tasks, []),
-      habits: parseJsonParam(params.habits, []),
-      goals: parseJsonParam(params.goals, []),
-    };
-  }, [params.tasks, params.habits, params.goals]);
 
   const entryInsights = useMemo(() => {
     if (!entryId) return undefined;

@@ -1,9 +1,7 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useMutation } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
-import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -45,7 +43,7 @@ const extractTokensFromUrl = (rawUrl: string): TokenPair | null => {
   };
 };
 
-const useAuthContextValue = () => {
+export const [AuthProvider, useAuth] = createContextHook(() => {
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
 
@@ -158,55 +156,9 @@ const useAuthContextValue = () => {
     },
   });
 
-  const {
-    mutateAsync: triggerGoogleOAuth,
-    isPending: isGoogleSigningIn,
-  } = useMutation({
-    mutationFn: async () => {
-      console.log('[Auth] Starting Google OAuth');
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: MAGIC_LINK_REDIRECT,
-          skipBrowserRedirect: true,
-        },
-      });
-      if (error) {
-        throw error;
-      }
-
-      const authUrl = data?.url;
-      if (!authUrl) {
-        throw new Error('Unable to start Google sign in.');
-      }
-
-      if (Platform.OS === 'web') {
-        globalThis?.window?.location.assign(authUrl);
-        return;
-      }
-
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, MAGIC_LINK_REDIRECT);
-      if (result.type === 'success' && result.url) {
-        await completeSessionFromUrl(result.url);
-        return;
-      }
-
-      if (result.type === 'cancel') {
-        throw new Error('Google sign in was canceled.');
-      }
-
-      throw new Error('Unable to complete Google sign in.');
-    },
-  });
-
   const sendMagicLink = useCallback(
     (email: string) => triggerMagicLink(email),
     [triggerMagicLink],
-  );
-
-  const signInWithGoogle = useCallback(
-    () => triggerGoogleOAuth(),
-    [triggerGoogleOAuth],
   );
 
   const signOut = useCallback(
@@ -221,8 +173,6 @@ const useAuthContextValue = () => {
     sendMagicLink,
     isSendingMagicLink,
     sendMagicLinkError,
-    signInWithGoogle,
-    isGoogleSigningIn,
     signOut,
     isSigningOut,
   }), [
@@ -231,11 +181,7 @@ const useAuthContextValue = () => {
     sendMagicLink,
     isSendingMagicLink,
     sendMagicLinkError,
-    signInWithGoogle,
-    isGoogleSigningIn,
     signOut,
     isSigningOut,
   ]);
-};
-
-export const [AuthProvider, useAuth] = createContextHook(useAuthContextValue);
+});

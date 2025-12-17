@@ -4,18 +4,19 @@ import type { ComponentType } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CheckCircle2, Circle, Plus, ChevronDown, RefreshCw, Heart, Briefcase, Activity, Wallet, Sprout, ChevronRight, Star } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAppState } from '../../contexts/AppStateContext';
 import Colors from '../../constants/colors';
 import { getLifeAreaLabel, resolveGoalLifeArea, resolveHabitLifeArea } from '../../constants/life-area-helpers';
 import type { Todo, LifeArea, Habit, Goal, GoalTask } from '../../types';
 
 const LIFE_AREA_ICON_CONFIG: Record<LifeArea, { Icon: ComponentType<{ size?: number; color?: string }>; color: string }> = {
-  relationship: { Icon: Heart, color: '#FF6B9D' },
-  career: { Icon: Briefcase, color: '#4A90E2' },
-  health: { Icon: Activity, color: '#47c447' },
-  finance: { Icon: Wallet, color: '#F5A623' },
-  growth: { Icon: Sprout, color: '#AF9BFF' },
+relationship: { Icon: (props) => <Ionicons name="heart" {...props} />, color: '#FF6B9D' },
+career:       { Icon: (props) => <Ionicons name="briefcase" {...props} />, color: '#4A90E2' },
+health:       { Icon: (props) => <Ionicons name="pulse" {...props} />, color: '#47c447' },
+finance:      { Icon: (props) => <Ionicons name="wallet" {...props} />, color: '#F5A623' },
+growth:       { Icon: (props) => <Ionicons name="leaf" {...props} />, color: '#AF9BFF' },
+
 };
 
 function LifeAreaIcon({ lifeArea }: { lifeArea?: LifeArea }) {
@@ -79,7 +80,7 @@ export default function PlanScreen() {
             setActionMenuOpen(actionMenuOpen ? null : 'goal');
           }}
         >
-          <Plus size={28} color={Colors.surface} />
+          <Ionicons name="add" size={28} color={Colors.surface} />
         </TouchableOpacity>
 
         {actionMenuOpen && (
@@ -95,7 +96,7 @@ export default function PlanScreen() {
                   onPress={() => handleAddAction('goal')}
                 >
                   <View style={styles.actionMenuIconContainer}>
-                    <CheckCircle2 size={20} color={Colors.primary} />
+                    <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
                   </View>
                   <Text style={styles.actionMenuItemText}>Add Goal</Text>
                 </TouchableOpacity>
@@ -104,7 +105,7 @@ export default function PlanScreen() {
                   onPress={() => handleAddAction('habit')}
                 >
                   <View style={styles.actionMenuIconContainer}>
-                    <RefreshCw size={20} color={Colors.primary} />
+                    <Ionicons name="refresh" size={20} color={Colors.primary} />
                   </View>
                   <Text style={styles.actionMenuItemText}>Add Habit</Text>
                 </TouchableOpacity>
@@ -113,7 +114,7 @@ export default function PlanScreen() {
                   onPress={() => handleAddAction('todo')}
                 >
                   <View style={styles.actionMenuIconContainer}>
-                    <Circle size={20} color={Colors.primary} />
+                    <Ionicons name="ellipse-outline" size={20} color={Colors.primary} />
                   </View>
                   <Text style={styles.actionMenuItemText}>Add To-do</Text>
                 </TouchableOpacity>
@@ -236,9 +237,9 @@ function TodoItemCard({
       activeOpacity={0.7}
     >
       {todo.completed ? (
-        <CheckCircle2 size={24} color={Colors.primary} />
+        <Ionicons name="checkmark-circle" size={24} color={Colors.primary} />
       ) : (
-        <Circle size={24} color={Colors.textSecondary} />
+        <Ionicons name="ellipse-outline" size={24} color={Colors.textSecondary} />
       )}
       <View style={styles.planItemContent}>
         <Text style={[styles.planItemTitle, todo.completed && styles.planItemTitleCompleted]}>
@@ -263,7 +264,7 @@ function HabitItemCard({ habit }: { habit: Habit }) {
       onPress={() => router.push({ pathname: '/habit-edit', params: { id: habit.id } })}
       activeOpacity={0.7}
     >
-      <RefreshCw size={24} color={Colors.accent} />
+      <Ionicons name="refresh" size={24} color={Colors.accent} />
       <View style={styles.planItemContent}>
         <View style={styles.habitTitleRow}>
           <Text style={styles.planItemTitle}>{habit.title}</Text>
@@ -360,17 +361,20 @@ function GoalItemCard({ goal }: { goal: Goal }) {
               activeOpacity={0.8}
               testID={`goal-${goal.id}-focus-toggle`}
             >
-              <Star
-                size={18}
-                color={isFocusGoal ? '#F5C34A' : Colors.textSecondary}
-                fill={isFocusGoal ? '#F5C34A' : 'transparent'}
-              />
+              <Ionicons
+  name="star"
+  size={18}
+  color={isFocusGoal ? '#F5C34A' : Colors.textSecondary}
+/>
+
             </TouchableOpacity>
-            <ChevronDown 
-              size={20} 
-              color={Colors.textSecondary} 
-              style={{ transform: [{ rotate: isExpanded ? '180deg' : '0deg' }] }}
-            />
+            <Ionicons
+  name="chevron-down"
+  size={20}
+  color={Colors.textSecondary}
+  style={{ transform: [{ rotate: isExpanded ? '180deg' : '0deg' }] }}
+/>
+
           </View>
         </View>
         
@@ -394,7 +398,11 @@ function GoalItemCard({ goal }: { goal: Goal }) {
               <Text style={styles.expandedSectionTitle}>Tasks</Text>
               {goalTasks.map(task => (
                 <View key={task.id} style={styles.taskItem}>
-                  <CheckCircle2 size={16} color={task.completed ? Colors.primary : Colors.textSecondary} />
+                  <Ionicons
+  name="checkmark-circle"
+  size={16}
+  color={task.completed ? Colors.primary : Colors.textSecondary}
+/>
                   <View style={styles.taskItemDetails}>
                     <Text style={[styles.taskItemText, task.completed && styles.taskItemTextCompleted]}>
                       {task.title}
@@ -424,7 +432,8 @@ function GoalItemCard({ goal }: { goal: Goal }) {
                   style={[styles.taskItem, { alignItems: 'flex-start' }]}
                   onPress={() => router.push({ pathname: '/habit-edit', params: { id: habit.id } })}
                 >
-                  <RefreshCw size={16} color={Colors.accent} style={{ marginTop: 2 }} />
+                  <Ionicons name="refresh" size={16} color={Colors.accent} />
+
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.taskItemText, { flex: 0 }]}>{habit.title}</Text>
                     <Text style={{ fontSize: 12, color: Colors.textSecondary, marginTop: 2 }}>
@@ -446,7 +455,8 @@ function GoalItemCard({ goal }: { goal: Goal }) {
             activeOpacity={0.85}
             testID={`goal-${goal.id}-add-action`}
           >
-            <Plus size={18} color={Colors.surface} />
+            <Ionicons name="add" size={18} color={Colors.surface} />
+
             <Text style={styles.addActionButtonText}>Add Action</Text>
           </TouchableOpacity>
 
@@ -457,7 +467,8 @@ function GoalItemCard({ goal }: { goal: Goal }) {
             testID={`goal-${goal.id}-view-details`}
           >
             <Text style={styles.viewDetailsText}>View Details</Text>
-            <ChevronRight size={18} color={Colors.text} />
+            <Ionicons name="chevron-forward" size={18} color={Colors.text} />
+
           </TouchableOpacity>
         </>
       )}

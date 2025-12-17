@@ -631,23 +631,18 @@ Journal entry:
       };
       addJournalEntry(entry);
       setEntryText('');
-      try {
-        router.push({
-          pathname: '/reflection-results',
-          params: {
-            tasks: JSON.stringify(data.tasks),
-            habits: JSON.stringify(data.habits),
-            goals: JSON.stringify(data.goals),
-            insights: JSON.stringify(data.insights),
-            entryId: entry.id,
-          },
-        });
-        if (Platform.OS !== 'web') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        }
-      } catch (error) {
-        console.error('[JournalCompose] Failed to navigate to reflection results', error);
-        showToast('Entry saved, but navigation failed. Please try again.', { type: 'info' });
+      router.push({
+        pathname: '/reflection-results',
+        params: {
+          tasks: JSON.stringify(data.tasks),
+          habits: JSON.stringify(data.habits),
+          goals: JSON.stringify(data.goals),
+          insights: JSON.stringify(data.insights),
+          entryId: entry.id,
+        },
+      });
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     },
     onError: error => {

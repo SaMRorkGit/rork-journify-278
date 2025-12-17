@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { BookText, CheckSquare, Lightbulb, Target, User } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import Colors from '../../constants/colors';
 
@@ -26,35 +26,40 @@ export default function TabLayout() {
         name="today"
         options={{
           title: 'Today',
-          tabBarIcon: ({ color }) => <CheckSquare size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="checkbox-outline" size={24} color={color} />
+,
         }}
       />
       <Tabs.Screen
         name="action"
         options={{
           title: 'Action',
-          tabBarIcon: ({ color }) => <Target size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="target-outline" size={24} color={color} />
+,
         }}
       />
       <Tabs.Screen
         name="journal"
         options={{
           title: 'Journal',
-          tabBarIcon: ({ color }) => <BookText size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="book-outline" size={24} color={color} />
+,
         }}
       />
       <Tabs.Screen
         name="progress"
         options={{
           title: 'Insights',
-          tabBarIcon: ({ color }) => <Lightbulb size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="bulb-outline" size={24} color={color} />
+,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <User size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="person-outline" size={24} color={color} />
+,
         }}
       />
     </Tabs>

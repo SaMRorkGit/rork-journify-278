@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Edit2, Check, X } from 'lucide-react-native';
@@ -50,7 +50,16 @@ const GOAL_OPTIONS = [
   { value: 'habits', label: 'Build habits and consistency' },
 ];
 
+const LIFE_AREAS = [
+  { value: 'relationship', label: 'Relationship' },
+  { value: 'career', label: 'Career' },
+  { value: 'health', label: 'Health' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'growth', label: 'Growth' },
+];
+
 export default function ProfileDetailsScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { state, updateUserProfile } = useAppState();
   const profile = state.userProfile;

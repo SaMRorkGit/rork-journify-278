@@ -6,8 +6,8 @@ import * as Haptics from 'expo-haptics';
 import { Heart, Briefcase, Activity, Wallet, Sprout, Plus } from 'lucide-react-native';
 import { useAppState } from '../contexts/AppStateContext';
 import Colors from '../constants/colors';
-import type { LifeArea, Aspiration } from '../types';
-import React from 'react';
+import type { LifeArea, Aspiration, Goal } from '../types';
+import React from "react";
 
 const LIFE_AREA_CONFIG: Record<LifeArea, { label: string; icon: ComponentType<any>; prompt: string }> = {
   relationship: { 
@@ -55,7 +55,7 @@ export default function AspirationEditorScreen() {
     if (existingAspiration) {
       setDescription(existingAspiration.description);
     }
-  }, [existingAspiration]);
+  }, [existingAspiration?.id]);
 
   const handleDescriptionChange = (text: string) => {
     if (text.length <= MAX_CHARACTERS) {

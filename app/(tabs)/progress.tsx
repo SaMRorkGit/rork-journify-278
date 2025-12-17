@@ -1,5 +1,5 @@
 import { Stack, useRouter } from 'expo-router';
-import { Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMemo, useState } from 'react';
@@ -245,7 +245,7 @@ ${themeSnapshotSerialized}`;
       <Stack.Screen options={{ headerShown: false }} />
       <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 20 }} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Lightbulb size={32} color={Colors.primary} />
+          <Ionicons name="bulb-outline" size={32} color={Colors.primary} />
           <Text style={styles.headerTitle}>Insights</Text>
           <Text style={styles.headerSubtitle}>Your growth journey</Text>
         </View>
@@ -260,7 +260,7 @@ ${themeSnapshotSerialized}`;
             }}
             testID="week-nav-prev"
           >
-            <ChevronLeft size={20} color={Colors.text} />
+            <Ionicons name="chevron-back" size={20} color={Colors.text} />
           </TouchableOpacity>
           <View style={styles.weekNavigatorLabel}>
             <Text style={styles.weekRangeText}>{weekRangeLabel}</Text>
@@ -277,7 +277,7 @@ ${themeSnapshotSerialized}`;
             disabled={!canGoForward}
             testID="week-nav-next"
           >
-            <ChevronRight size={20} color={canGoForward ? Colors.text : Colors.textSecondary} />
+            <Ionicons name="chevron-forward" size={20} color={canGoForward ? Colors.text : Colors.textSecondary} />
           </TouchableOpacity>
         </View>
 

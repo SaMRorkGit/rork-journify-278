@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
   Check,
@@ -45,6 +45,7 @@ export default function ReflectionInsightsContent({
     );
   }, [reflectionData.goals.length, reflectionData.habits.length, reflectionData.tasks.length]);
 
+  const hasAnyInsightContent = false;
 
   const selectedTasksSet = selectedTasks ?? new Set<string>();
   const canSelectTasks = interactiveActions && typeof onToggleTaskSelection === 'function';
