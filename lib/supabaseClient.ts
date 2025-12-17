@@ -1,18 +1,40 @@
-import 'expo-sqlite/localStorage/install';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupportedStorage } from '@supabase/supabase-js';
 
-const fallbackSupabaseUrl = 'https://cgiiyaalqfpchoekgptl.supabase.co';
-const fallbackSupabaseAnonKey =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnaWl5YWFscWZwY2hvZWtncHRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMjU4ODgsImV4cCI6MjA4MDkwMTg4OH0.0Lh6NtYe5nP8E5yV6j4FJmjYuZUAyAazn9Fq846g0Zw';
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? fallbackSupabaseUrl;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? fallbackSupabaseAnonKey;
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error(
+    '[Supabase] Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY. Please configure environment variables.'
+  );
+}
 
-const storage = (globalThis?.localStorage ?? undefined) as SupportedStorage | undefined;
+const createUniversalStorage = (): SupportedStorage => {
+  const localStorage = (globalThis as unknown as { localStorage?: Storage } | undefined)?.localStorage;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  if (localStorage) {
+    const storage: SupportedStorage = {
+      getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+      setItem: (key: string, value: string) => {
+        localStorage.setItem(key, value);
+        return Promise.resolve();
+      },
+      removeItem: (key: string) => {
+        localStorage.removeItem(key);
+        return Promise.resolve();
+      },
+    };
+
+    return storage;
+  }
+
+  return AsyncStorage;
+};
+
+export const supabase = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '', {
   auth: {
-    storage,
+    storage: createUniversalStorage(),
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,

@@ -1,4 +1,8 @@
 .expo/
 **/.expo/
+.expo/types/
+**/.expo/types/
+.expo/types/router.d.ts
+**/.expo/types/router.d.ts
 expo/types/
 **/expo/types/
