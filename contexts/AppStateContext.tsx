@@ -95,8 +95,8 @@ const noopShowToast = () => {};
 export const [AppStateProvider, useAppState] = createContextHook(() => {
   const toastContext = useToast();
   const showToast = useMemo(() => toastContext?.showToast ?? noopShowToast, [toastContext?.showToast]);
-  const { session } = useAuth();
-
+  const authContext = useAuth();
+  const session = authContext?.session ?? null;
   const userId = session?.user?.id ?? null;
 
   const [state, setState] = useState<AppState>(initialState);
