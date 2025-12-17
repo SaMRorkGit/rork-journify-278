@@ -138,7 +138,7 @@ export default function ProfileScreen() {
                   activeOpacity={0.7}
                 >
                   <View style={[styles.aspirationIconContainer, { backgroundColor: config.color + '20' }]}>
-                    <Ionicons name={config.icon as React.ComponentProps<typeof Ionicons>['name']} size={24} color={config.color} />
+                    <Ionicons name={config.icon} size={24} color={config.color} />
                   </View>
 
                   <View style={styles.aspirationContent}>

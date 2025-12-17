@@ -1,16 +1,25 @@
-import { Redirect } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Mail, Sparkles } from 'lucide-react-native';
+import { Chrome, Mail, Sparkles } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { useAuth } from '@/contexts/AuthContext';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginScreen() {
-  const { session, isAuthLoading, sendMagicLink, isSendingMagicLink, redirectUri } = useAuth();
+  const router = useRouter();
+  const {
+    session,
+    isAuthLoading,
+    sendMagicLink,
+    isSendingMagicLink,
+    redirectUri,
+    signInWithGoogle,
+    isGoogleSigningIn,
+  } = useAuth();
   const [email, setEmail] = useState<string>('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -35,6 +44,23 @@ export default function LoginScreen() {
       setErrorMessage(error instanceof Error ? error.message : 'Unable to send magic link right now.');
     }
   }, [isEmailValid, normalizedEmail, sendMagicLink]);
+
+  const handleGoogleSignIn = useCallback(async () => {
+    try {
+      console.log('[Auth] Triggering Google OAuth from login screen');
+      setStatusMessage(null);
+      setErrorMessage(null);
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('[Auth] Google sign in error', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to sign in with Google right now.');
+    }
+  }, [signInWithGoogle]);
+
+  const handleTempGoToToday = useCallback(() => {
+    console.log('[Auth] Temporary bypass: navigating to Today');
+    router.push('/today');
+  }, [router]);
 
   if (isAuthLoading) {
     return (
@@ -113,6 +139,38 @@ export default function LoginScreen() {
               <Text style={styles.helperText}>
                 We will redirect you to {redirectUri} when you tap the link.
               </Text>
+
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or continue with</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.googleButton, isGoogleSigningIn && styles.buttonDisabled]}
+                onPress={handleGoogleSignIn}
+                disabled={isGoogleSigningIn}
+                testID="google-sign-in-button"
+              >
+                {isGoogleSigningIn ? (
+                  <ActivityIndicator color={Colors.text} />
+                ) : (
+                  <View style={styles.googleButtonContent}>
+                    <View style={styles.googleIconBadge}>
+                      <Chrome color={Colors.text} size={20} />
+                    </View>
+                    <Text style={styles.googleButtonText}>Continue with Google</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.tempNavButton}
+                onPress={handleTempGoToToday}
+                testID="temp-go-to-today-button"
+              >
+                <Text style={styles.tempNavButtonText}>Temporary: Go to Today</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -234,6 +292,66 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 18,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.glassBorder,
+  },
+  dividerText: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
+  googleButton: {
+    marginTop: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    backgroundColor: Colors.bgSoft,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  googleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  googleIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  tempNavButton: {
+    marginTop: 10,
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  tempNavButtonText: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
   },
   loadingContainer: {
     flex: 1,

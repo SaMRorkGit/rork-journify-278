@@ -1,6 +1,5 @@
 import { Stack, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Award, Sun, Moon, Plus, ChevronDown, ChevronRight } from 'lucide-react-native';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, PanResponder, Animated, ActivityIndicator } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -410,7 +409,7 @@ export default function TodayScreen() {
           <Text style={styles.microCopyText}>Today is a fresh chance for a small win.</Text>
         </View>
 
-        <Text style={styles.todaysActionsTitle}>TODAY’S ACTIONS</Text>
+        <Text style={styles.todaysActionsTitle}>TODAY'S ACTIONS</Text>
         <View style={styles.actionsCard}>
           {(() => {
             const sortedItems = getSortedActions(habits, todos, goalTasks, state);
