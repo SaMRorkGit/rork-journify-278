@@ -3,12 +3,35 @@ const expoConfig = require('eslint-config-expo/flat');
 
 const expoFlatConfig = Array.isArray(expoConfig) ? expoConfig : [expoConfig];
 
+const ignoredPaths = [
+  "dist/**",
+  ".expo/**",
+  "**/.expo/**",
+  ".expo/types/router.d.ts",
+  "**/.expo/types/router.d.ts",
+];
+
+const expoFlatConfigPatched = expoFlatConfig.map(config => ({
+  ...config,
+  ignores: [...(config.ignores ?? []), ...ignoredPaths],
+  linterOptions: {
+    ...(config.linterOptions ?? {}),
+    reportUnusedDisableDirectives: "off",
+  }
+}));
+
 module.exports = defineConfig([
   {
-    ignores: ["dist/**", ".expo/**"],
+    ignores: ignoredPaths,
     linterOptions: {
-      reportUnusedDisableDirectives: false,
+      reportUnusedDisableDirectives: "off",
     },
   },
-  ...expoFlatConfig,
+  ...expoFlatConfigPatched,
+  {
+    files: [".expo/types/router.d.ts", "**/.expo/types/router.d.ts"],
+    linterOptions: {
+      reportUnusedDisableDirectives: "off",
+    },
+  },
 ]);

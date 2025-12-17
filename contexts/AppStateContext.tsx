@@ -1,11 +1,27 @@
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { AppState, JournalEntry, Todo, GoalTask, Habit, Goal, UserProfile, Vision, Aspiration, DailyCheckIn, VisionGuideResponse, VisionGuideSession } from '../types';
+import type {
+  AppState,
+  Aspiration,
+  DailyCheckIn,
+  Goal,
+  GoalTask,
+  Habit,
+  JournalEntry,
+  Todo,
+  UserProfile,
+  Vision,
+  VisionGuideResponse,
+  VisionGuideSession,
+} from '../types';
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 
 const STORAGE_KEY = 'growth-app-state';
+const REMOTE_TABLE = 'app_states' as const;
 
 const normalizeGoal = (goal: Goal): Goal => ({
   ...goal,
@@ -79,58 +95,123 @@ const noopShowToast = () => {};
 export const [AppStateProvider, useAppState] = createContextHook(() => {
   const toastContext = useToast();
   const showToast = useMemo(() => toastContext?.showToast ?? noopShowToast, [toastContext?.showToast]);
+  const { session } = useAuth();
+
+  const userId = session?.user?.id ?? null;
+
   const [state, setState] = useState<AppState>(initialState);
 
   const [hasInitialized, setHasInitialized] = useState(false);
 
+  const parseAndNormalizeState = useCallback((raw: unknown): AppState => {
+    const parsedState = (raw ?? {}) as Partial<AppState> & { tasks?: Todo[] };
+
+    const storedGoals: Goal[] = (parsedState.goals ?? []).map(normalizeGoal);
+    const storedFocusGoalId: string | undefined =
+      (parsedState.focusGoalId as string | undefined) ?? storedGoals.find(goal => goal.isFocusGoal)?.id;
+    const storedSelectionMode: 'auto' | 'manual' =
+      (parsedState.focusGoalSelectionMode as 'auto' | 'manual' | undefined) ??
+      (storedFocusGoalId ? 'manual' : 'auto');
+
+    const mergedState: AppState = {
+      ...initialState,
+      ...(parsedState as AppState),
+      goals: storedGoals,
+      todos: (parsedState.todos as Todo[] | undefined) ?? parsedState.tasks ?? [],
+      goalTasks: (parsedState.goalTasks as GoalTask[] | undefined) ?? [],
+      aspirations: (parsedState.aspirations as Aspiration[] | undefined) ?? [],
+      dailyCheckIns: (parsedState.dailyCheckIns as DailyCheckIn[] | undefined) ?? [],
+      userProgress: parsedState.userProgress ?? initialState.userProgress,
+      focusGoalId: storedFocusGoalId,
+      focusGoalSelectionMode: storedSelectionMode,
+    };
+
+    return applyFocusGoalPreferences(mergedState);
+  }, []);
+
+  const stateQueryKey = useMemo(() => ['appState', userId ?? 'local'] as const, [userId]);
+
   const stateQuery = useQuery({
-    queryKey: ['appState'],
+    queryKey: stateQueryKey,
     queryFn: async () => {
-      console.log('[AppState] Loading state from storage...');
+      if (userId) {
+        console.log('[AppState] Loading state from Supabase...', { userId });
+        const { data, error } = await supabase
+          .from(REMOTE_TABLE)
+          .select('payload')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (error) {
+          console.error('[AppState] Supabase load error', error);
+          console.log('[AppState] Falling back to local storage');
+        } else if (data?.payload) {
+          console.log('[AppState] Loaded remote state successfully');
+          return parseAndNormalizeState(data.payload);
+        } else {
+          console.log('[AppState] No remote state found, using local/initial');
+        }
+      }
+
+      console.log('[AppState] Loading state from local storage...');
       try {
         const stored = await AsyncStorage.getItem(STORAGE_KEY);
         if (!stored) {
           console.log('[AppState] No stored state found, using initial state');
           return initialState;
         }
-        
-        const parsedState = JSON.parse(stored);
-        const storedGoals: Goal[] = (parsedState.goals || []).map(normalizeGoal);
-        const storedFocusGoalId: string | undefined = parsedState.focusGoalId ?? storedGoals.find(goal => goal.isFocusGoal)?.id;
-        const storedSelectionMode: 'auto' | 'manual' = parsedState.focusGoalSelectionMode ?? (storedFocusGoalId ? 'manual' : 'auto');
 
-        const mergedState: AppState = {
-          ...initialState,
-          ...parsedState,
-          goals: storedGoals,
-          todos: parsedState.todos || parsedState.tasks || [],
-          goalTasks: parsedState.goalTasks || [],
-          aspirations: parsedState.aspirations || [],
-          dailyCheckIns: parsedState.dailyCheckIns || [],
-          userProgress: parsedState.userProgress || initialState.userProgress,
-          focusGoalId: storedFocusGoalId,
-          focusGoalSelectionMode: storedSelectionMode,
-        };
-
-        console.log('[AppState] State loaded successfully');
-        return applyFocusGoalPreferences(mergedState);
+        const parsed = JSON.parse(stored) as unknown;
+        console.log('[AppState] Local state loaded successfully');
+        return parseAndNormalizeState(parsed);
       } catch (error) {
-        console.error('[AppState] Error loading state:', error);
+        console.error('[AppState] Error loading local state:', error);
         return initialState;
       }
     },
-    staleTime: Infinity,
+    staleTime: userId ? 10_000 : Infinity,
     gcTime: Infinity,
   });
 
+  type SavePayload = { newState: AppState; userId: string | null };
+
   const saveMutation = useMutation({
-    mutationFn: async (newState: AppState) => {
+    mutationFn: async ({ newState, userId }: SavePayload) => {
+      console.log('[AppState] Persisting state...', { target: userId ? 'supabase+local' : 'local' });
+
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+
+      if (!userId) {
+        return newState;
+      }
+
+      const { error } = await supabase.from(REMOTE_TABLE).upsert(
+        {
+          user_id: userId,
+          payload: newState,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      );
+
+      if (error) {
+        console.error('[AppState] Supabase save error', error);
+      } else {
+        console.log('[AppState] Supabase state upserted');
+      }
+
       return newState;
     },
   });
 
   const { mutate: saveToStorage } = saveMutation;
+
+  const persistState = useCallback(
+    (newState: AppState) => {
+      saveToStorage({ newState, userId });
+    },
+    [saveToStorage, userId]
+  );
 
   useEffect(() => {
     if (stateQuery.data) {
@@ -174,11 +255,11 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
 
       console.log(`[XP] Awarded 10 XP for journaling. Level: ${newLevel}, XP: ${remainingXP}/${calculateXPForLevel(newLevel)}`);
 
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     showToast('Your reflection is saved');
-  }, [saveToStorage, calculateXPForLevel, showToast]);
+  }, [persistState, calculateXPForLevel, showToast]);
 
   const updateJournalEntry = useCallback((id: string, updates: Partial<JournalEntry>) => {
     setState(prevState => {
@@ -188,10 +269,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
           entry.id === id ? { ...entry, ...updates } : entry
         ),
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const addTodo = useCallback((todo: Todo) => {
     setState(prevState => {
@@ -200,11 +281,11 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         todos: [...prevState.todos, todo],
       };
       console.log(`[Todo] Added task: ${todo.title}`);
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     showToast('Task added');
-  }, [saveToStorage, showToast]);
+  }, [persistState, showToast]);
 
   const updateTodo = useCallback((id: string, updates: Partial<Todo>) => {
     setState(prevState => {
@@ -212,10 +293,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         todos: prevState.todos.map(t => t.id === id ? { ...t, ...updates } : t),
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const toggleTodo = useCallback((id: string) => {
     let completedToast = false;
@@ -260,13 +341,13 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         console.log(`[XP] Awarded 5 XP for completing todo. Level: ${newLevel}, XP: ${remainingXP}/${calculateXPForLevel(newLevel)}`);
       }
 
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     if (completedToast) {
       showToast('Task completed, great job!');
     }
-  }, [saveToStorage, calculateXPForLevel, showToast]);
+  }, [persistState, calculateXPForLevel, showToast]);
 
   const deleteTodo = useCallback((id: string) => {
     let deleted = false;
@@ -280,13 +361,13 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         todos: prevState.todos.filter(t => t.id !== id),
       };
       console.log(`[Todo] Deleted task id: ${id}`);
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     if (deleted) {
       showToast('Task deleted');
     }
-  }, [saveToStorage, showToast]);
+  }, [persistState, showToast]);
 
   const reorderTodos = useCallback((todos: Todo[]) => {
     setState(prevState => {
@@ -294,10 +375,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         todos,
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const addGoalTask = useCallback((task: GoalTask) => {
     setState(prevState => {
@@ -306,11 +387,11 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         goalTasks: [...prevState.goalTasks, task],
       };
       console.log(`[GoalTask] Added task: ${task.title}`);
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     showToast('Task added');
-  }, [saveToStorage, showToast]);
+  }, [persistState, showToast]);
 
   const updateGoalTask = useCallback((id: string, updates: Partial<GoalTask>) => {
     setState(prevState => {
@@ -318,10 +399,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         goalTasks: prevState.goalTasks.map(t => t.id === id ? { ...t, ...updates } : t),
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const toggleGoalTask = useCallback((id: string) => {
     let completedToast = false;
@@ -366,13 +447,13 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         console.log(`[XP] Awarded 8 XP for completing goal task. Level: ${newLevel}, XP: ${remainingXP}/${calculateXPForLevel(newLevel)}`);
       }
 
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     if (completedToast) {
       showToast('Task completed, great job!');
     }
-  }, [saveToStorage, calculateXPForLevel, showToast]);
+  }, [persistState, calculateXPForLevel, showToast]);
 
   const deleteGoalTask = useCallback((id: string) => {
     let deleted = false;
@@ -386,13 +467,13 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         goalTasks: prevState.goalTasks.filter(t => t.id !== id),
       };
       console.log(`[GoalTask] Deleted task id: ${id}`);
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     if (deleted) {
       showToast('Task deleted');
     }
-  }, [saveToStorage, showToast]);
+  }, [persistState, showToast]);
 
   const addHabit = useCallback((habit: Habit) => {
     setState(prevState => {
@@ -400,11 +481,11 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         habits: [habit, ...prevState.habits],
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     showToast('Habit created');
-  }, [saveToStorage, showToast]);
+  }, [persistState, showToast]);
 
   const updateHabit = useCallback((id: string, updates: Partial<Habit>) => {
     setState(prevState => {
@@ -412,11 +493,11 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         habits: prevState.habits.map(h => h.id === id ? { ...h, ...updates } : h),
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     showToast('Habit saved');
-  }, [saveToStorage, showToast]);
+  }, [persistState, showToast]);
 
   const toggleHabitCompletion = useCallback((id: string, date: string, value?: number) => {
     let completedToast = false;
@@ -466,13 +547,13 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         console.log(`[XP] Awarded 7 XP for completing habit. Level: ${newLevel}, XP: ${remainingXP}/${calculateXPForLevel(newLevel)}`);
       }
 
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     if (completedToast) {
       showToast('Habit done, good job staying consistent!!');
     }
-  }, [saveToStorage, calculateXPForLevel, showToast]);
+  }, [persistState, calculateXPForLevel, showToast]);
 
   const deleteHabit = useCallback((id: string) => {
     let deleted = false;
@@ -497,13 +578,13 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         goals: updatedGoals,
       };
       console.log(`[Habit] Deleted habit with id: ${id}`);
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     if (deleted) {
       showToast('Habit deleted');
     }
-  }, [saveToStorage, showToast]);
+  }, [persistState, showToast]);
 
   const addGoal = useCallback((goal: Goal) => {
     setState(prevState => {
@@ -512,11 +593,11 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         goals: [normalizeGoal(goal), ...prevState.goals],
       };
       const newState = applyFocusGoalPreferences(baseState);
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     showToast('New goal added');
-  }, [saveToStorage, showToast]);
+  }, [persistState, showToast]);
 
   const updateGoal = useCallback((id: string, updates: Partial<Goal>, options?: { toastMessage?: string }) => {
     setState(prevState => {
@@ -550,13 +631,13 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
       };
       const newState = applyFocusGoalPreferences(baseState);
 
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     if (options?.toastMessage) {
       showToast(options.toastMessage);
     }
-  }, [saveToStorage, calculateXPForLevel, showToast]);
+  }, [persistState, calculateXPForLevel, showToast]);
 
   const setFocusGoal = useCallback((goalId?: string) => {
     setState(prevState => {
@@ -570,11 +651,11 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         focusGoalId: goalId,
       });
 
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     showToast(goalId ? 'Focus goal pinned' : 'Focus goal cleared');
-  }, [saveToStorage, showToast]);
+  }, [persistState, showToast]);
 
   const deleteGoal = useCallback((id: string) => {
     let deleted = false;
@@ -595,13 +676,13 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
       };
       const newState = applyFocusGoalPreferences(baseState);
 
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     if (deleted) {
       showToast('Goal deleted');
     }
-  }, [saveToStorage, showToast]);
+  }, [persistState, showToast]);
 
   const awardXP = useCallback((amount: number, reason: string) => {
     setState(prevState => {
@@ -624,10 +705,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
 
       console.log(`[XP] Awarded ${amount} XP for ${reason}. Level: ${newLevel}, XP: ${remainingXP}/${calculateXPForLevel(newLevel)}`);
       
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage, calculateXPForLevel]);
+  }, [persistState, calculateXPForLevel]);
 
   const updateUserProfile = useCallback((profile: Partial<UserProfile>) => {
     setState(prevState => {
@@ -638,10 +719,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
           ...profile,
         } as UserProfile,
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const updateVision = useCallback((vision: Vision) => {
     setState(prevState => {
@@ -649,10 +730,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         vision,
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const deleteVision = useCallback(() => {
     setState(prevState => {
@@ -660,10 +741,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         vision: undefined,
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const saveVisionGuideResponse = useCallback((response: VisionGuideResponse) => {
     setState(prevState => {
@@ -683,10 +764,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         visionGuideSession: updatedSession,
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const updateVisionGuideSession = useCallback((updates: Partial<VisionGuideSession>) => {
     setState(prevState => {
@@ -702,10 +783,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         visionGuideSession: updatedSession,
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const clearVisionGuideSession = useCallback(() => {
     setState(prevState => {
@@ -716,10 +797,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         visionGuideSession: undefined,
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const consumeVisionGuidePendingVision = useCallback(() => {
     setState(prevState => {
@@ -736,10 +817,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         visionGuideSession: newSession,
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const addAspiration = useCallback((aspiration: Aspiration) => {
     setState(prevState => {
@@ -747,10 +828,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         aspirations: [...prevState.aspirations, aspiration],
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const updateAspiration = useCallback((id: string, updates: Partial<Aspiration>) => {
     setState(prevState => {
@@ -760,10 +841,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
           a.id === id ? { ...a, ...updates } : a
         ),
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const deleteAspiration = useCallback((id: string) => {
     setState(prevState => {
@@ -771,10 +852,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         aspirations: prevState.aspirations.filter(a => a.id !== id),
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const addDailyCheckIn = useCallback((checkIn: DailyCheckIn) => {
     setState(prevState => {
@@ -782,7 +863,7 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ...prevState,
         dailyCheckIns: [checkIn, ...prevState.dailyCheckIns],
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
     const toastMessage =
@@ -790,7 +871,7 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
         ? 'Nice work checking in this evening. A moment of reflection is a gift to your future self.'
         : "Thanks for checking in. Let's take today one gentle step at a time.";
     showToast(toastMessage);
-  }, [saveToStorage, showToast]);
+  }, [persistState, showToast]);
 
   const updateDailyCheckIn = useCallback((id: string, updates: Partial<DailyCheckIn>) => {
     setState(prevState => {
@@ -800,10 +881,10 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
           c.id === id ? { ...c, ...updates } : c
         ),
       };
-      saveToStorage(newState);
+      persistState(newState);
       return newState;
     });
-  }, [saveToStorage]);
+  }, [persistState]);
 
   const isLoading = !hasInitialized && stateQuery.isLoading;
 
