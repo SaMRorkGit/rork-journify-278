@@ -43,13 +43,17 @@ const extractTokensFromUrl = (rawUrl: string): TokenPair | null => {
 };
 
 export const [AuthProvider, useAuth] = createContextHook(() => {
+  // All state hooks must be declared unconditionally at the top level
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [isSendingMagicLink, setIsSendingMagicLink] = useState<boolean>(false);
   const [sendMagicLinkError, setSendMagicLinkError] = useState<Error | null>(null);
   const [isSigningOut, setIsSigningOut] = useState<boolean>(false);
+  
+  // All ref hooks must be declared unconditionally at the top level
   const isMountedRef = useRef<boolean>(true);
 
+  // All effect hooks must be declared unconditionally at the top level
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -134,6 +138,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     };
   }, []);
 
+  // All callback hooks must be declared unconditionally at the top level
   const sendMagicLink = useCallback(async (email: string) => {
     setIsSendingMagicLink(true);
     setSendMagicLinkError(null);
@@ -177,6 +182,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     }
   }, []);
 
+  // useMemo hook must be declared unconditionally at the top level (in return statement is acceptable)
   return useMemo(() => ({
     session,
     isAuthLoading,
