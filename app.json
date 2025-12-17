@@ -70,10 +70,9 @@
     "experiments": {
       "typedRoutes": true
     },
-
-	"extra": {
+    "extra": {
       "supabaseUrl": "https://bvkngjafkuavnzadqtjg.supabase.co",
       "supabaseAnonKey": "sb_publishable_KVh57Yqjrf655_grV5asng_RtlBPLkF"
-	}
+    }
   }
 }

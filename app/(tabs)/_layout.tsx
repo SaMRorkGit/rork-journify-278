@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
+import { BookOpenText, Lightbulb, Target, User, CheckCircle2 } from 'lucide-react-native';
 import Colors from '../../constants/colors';
 
 export default function TabLayout() {
@@ -26,40 +26,70 @@ export default function TabLayout() {
         name="today"
         options={{
           title: 'Today',
-          tabBarIcon: ({ color }) => <Ionicons name="checkbox-outline" size={24} color={color} />
-,
+          tabBarIcon: ({ color, focused }) => (
+            <CheckCircle2
+              size={24}
+              color={color}
+              strokeWidth={focused ? 2.6 : 2.2}
+              testID="tab-icon-today"
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="action"
         options={{
           title: 'Action',
-          tabBarIcon: ({ color }) => <Ionicons name="target-outline" size={24} color={color} />
-,
+          tabBarIcon: ({ color, focused }) => (
+            <Target
+              size={24}
+              color={color}
+              strokeWidth={focused ? 2.6 : 2.2}
+              testID="tab-icon-action"
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="journal"
         options={{
           title: 'Journal',
-          tabBarIcon: ({ color }) => <Ionicons name="book-outline" size={24} color={color} />
-,
+          tabBarIcon: ({ color, focused }) => (
+            <BookOpenText
+              size={24}
+              color={color}
+              strokeWidth={focused ? 2.6 : 2.2}
+              testID="tab-icon-journal"
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="progress"
         options={{
           title: 'Insights',
-          tabBarIcon: ({ color }) => <Ionicons name="bulb-outline" size={24} color={color} />
-,
+          tabBarIcon: ({ color, focused }) => (
+            <Lightbulb
+              size={24}
+              color={color}
+              strokeWidth={focused ? 2.6 : 2.2}
+              testID="tab-icon-progress"
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <Ionicons name="person-outline" size={24} color={color} />
-,
+          tabBarIcon: ({ color, focused }) => (
+            <User
+              size={24}
+              color={color}
+              strokeWidth={focused ? 2.6 : 2.2}
+              testID="tab-icon-profile"
+            />
+          ),
         }}
       />
     </Tabs>

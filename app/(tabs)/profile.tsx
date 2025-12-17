@@ -8,7 +8,9 @@ import { useAppState } from '../../contexts/AppStateContext';
 import Colors from '../../constants/colors';
 import type { LifeArea } from '../../types';
 
-const LIFE_AREA_CONFIG: Record<LifeArea, { label: string; icon: string; color: string }> = {
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+const LIFE_AREA_CONFIG: Record<LifeArea, { label: string; icon: IoniconName; color: string }> = {
   relationship: { label: 'Relationship', icon: 'heart-outline', color: '#FF6B9D' },
   career: { label: 'Career', icon: 'briefcase-outline', color: '#4A90E2' },
   health: { label: 'Health', icon: 'fitness-outline', color: '#47c447' },
