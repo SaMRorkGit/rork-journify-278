@@ -17,8 +17,8 @@ import type {
   VisionGuideSession,
 } from '../types';
 import { supabase } from '@/lib/supabaseClient';
-import { useAuth } from './AuthContext';
-import { useToast } from './ToastContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 
 const STORAGE_KEY = 'growth-app-state';
 const REMOTE_TABLE = 'app_states' as const;

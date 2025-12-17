@@ -5,10 +5,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import useSuppressLinkedInJobExtractorError from '@/hooks/useSuppressLinkedInJobExtractorError';
-import ToastLayer from '../components/ToastLayer';
-import { AppStateProvider } from '../contexts/AppStateContext';
-import { ToastProvider } from '../contexts/ToastContext';
-import { AuthProvider } from '../contexts/AuthContext';
+import ToastLayer from '@/components/ToastLayer';
+import { AppStateProvider } from '@/contexts/AppStateContext';
+import { ToastProvider } from '@/contexts/ToastContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 SplashScreen.preventAutoHideAsync();
 

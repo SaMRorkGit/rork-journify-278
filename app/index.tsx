@@ -1,8 +1,8 @@
 import { Redirect } from 'expo-router';
 import { View, ActivityIndicator } from 'react-native';
-import Colors from '../constants/colors';
-import { useAppState } from '../contexts/AppStateContext';
-import { useAuth } from '../contexts/AuthContext';
+import Colors from '@/constants/colors';
+import { useAppState } from '@/contexts/AppStateContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Index() {
   const { state, isLoading } = useAppState();
