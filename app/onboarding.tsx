@@ -555,11 +555,12 @@ export default function OnboardingScreen() {
           {step === 'vision' && (
             <View style={styles.stepContainer}>
               <Text style={styles.sectionTitle}>Vision</Text>
+              <Text style={[styles.visionPrePrompt, styles.centeredText]}>Imagine a year from now…</Text>
               <Text style={[styles.question, styles.centeredText]}>Who do you want to be, and what life would feel meaningful?</Text>
               <Text style={[styles.subtitle, styles.centeredText]}>Think gently about the life you want to grow into.</Text>
               <TextInput
                 style={[styles.textInput, styles.textArea, styles.visionInputArea]}
-                placeholder="I want to..."
+                placeholder="I want to live a calmer, more intentional life and take better care of myself."
                 placeholderTextColor={Colors.textSecondary}
                 value={visionText}
                 onChangeText={setVisionText}
@@ -567,6 +568,9 @@ export default function OnboardingScreen() {
                 textAlignVertical="top"
                 autoFocus
               />
+              <Text style={[styles.visionHelperText, styles.centeredText]} testID="onboarding-vision-helper-text">
+                This doesn’t have to be perfect, you can refine it anytime.
+              </Text>
               <TouchableOpacity
                 style={styles.helperButton}
                 onPress={() => {
@@ -867,6 +871,18 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 12,
     fontWeight: '600' as const,
+  },
+  visionPrePrompt: {
+    fontSize: 15,
+    color: Colors.textSecondary,
+    marginBottom: 10,
+    fontWeight: '600' as const,
+  },
+  visionHelperText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginTop: 10,
+    lineHeight: 18,
   },
   loadingContainer: {
     flex: 1,
