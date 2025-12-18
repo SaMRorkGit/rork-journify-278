@@ -2,7 +2,7 @@ import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Platform, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, Plus, X, CheckCircle2, RefreshCw, Sparkles, Heart, Briefcase, Activity, Wallet, Sprout, Clock, Hash } from 'lucide-react-native';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 
@@ -88,6 +88,9 @@ export default function GoalSetupScreen() {
   const [aiGoalSuggestions, setAiGoalSuggestions] = useState<string[]>([]);
   const [aiGoalIntro, setAiGoalIntro] = useState<string>('');
   const [suggestionIndex, setSuggestionIndex] = useState(0);
+
+  const lastAutoSuggestedGoalRef = useRef<string | null>(null);
+  const [hasAutoSuggestedForStep, setHasAutoSuggestedForStep] = useState<boolean>(false);
 
   useEffect(() => {
     setSuggestionIndex(0);
@@ -175,6 +178,8 @@ Example: {
     },
   });
 
+  const { mutate: mutatePathSuggestions, isPending: isPathSuggestionsPending } = pathMutation;
+
   const handleBack = () => {
     if (lockLifeArea && step === 2) {
       router.back();
@@ -194,6 +199,23 @@ Example: {
     }
     setStep((s) => ((typeof s === 'number' ? s : 1) + 1) as Step);
   };
+
+  const handleRegenerateSuggestions = useCallback(() => {
+    const trimmedGoal = goalTitle.trim();
+    if (!trimmedGoal) {
+      console.log('[goal-setup] regenerate suggestions ignored (empty goalTitle)');
+      return;
+    }
+
+    console.log('[goal-setup] regenerate suggestions', {
+      step,
+      trimmedGoal,
+      isPending: isPathSuggestionsPending,
+    });
+
+    setAiSuggestions({ tasks: [], habits: [] });
+    mutatePathSuggestions(trimmedGoal);
+  }, [goalTitle, mutatePathSuggestions, isPathSuggestionsPending, step]);
 
   const handleAddAction = () => {
     if (actionInput.trim()) {
@@ -300,6 +322,61 @@ Example: {
   const handleEditStep = (targetStep: Step) => {
     setStep(targetStep);
   };
+
+  useEffect(() => {
+    if (step !== 5) {
+      if (hasAutoSuggestedForStep) {
+        console.log('[goal-setup] leaving step 5, resetting auto-suggest flag');
+      }
+      setHasAutoSuggestedForStep(false);
+      return;
+    }
+
+    if (hasAutoSuggestedForStep) {
+      return;
+    }
+
+    const trimmedGoal = goalTitle.trim();
+    if (!trimmedGoal) {
+      console.log('[goal-setup] step 5: auto-suggest skipped (empty goalTitle)');
+      return;
+    }
+
+    const alreadyHasSuggestions = aiSuggestions.tasks.length > 0 || aiSuggestions.habits.length > 0;
+    if (alreadyHasSuggestions) {
+      console.log('[goal-setup] step 5: auto-suggest skipped (already has suggestions)', {
+        tasks: aiSuggestions.tasks.length,
+        habits: aiSuggestions.habits.length,
+      });
+      setHasAutoSuggestedForStep(true);
+      lastAutoSuggestedGoalRef.current = trimmedGoal;
+      return;
+    }
+
+    if (isPathSuggestionsPending) {
+      console.log('[goal-setup] step 5: auto-suggest waiting (pending)');
+      return;
+    }
+
+    if (lastAutoSuggestedGoalRef.current === trimmedGoal) {
+      console.log('[goal-setup] step 5: auto-suggest skipped (already attempted for this goal)');
+      setHasAutoSuggestedForStep(true);
+      return;
+    }
+
+    console.log('[goal-setup] step 5: auto-suggesting actions', { trimmedGoal });
+    lastAutoSuggestedGoalRef.current = trimmedGoal;
+    setHasAutoSuggestedForStep(true);
+    mutatePathSuggestions(trimmedGoal);
+  }, [
+    aiSuggestions.habits.length,
+    aiSuggestions.tasks.length,
+    goalTitle,
+    hasAutoSuggestedForStep,
+    mutatePathSuggestions,
+    isPathSuggestionsPending,
+    step,
+  ]);
 
 
 
@@ -784,20 +861,19 @@ Return ONLY a JSON object:
                 </TouchableOpacity>
               ))}
 
-              {aiSuggestions.habits.length === 0 && aiSuggestions.tasks.length === 0 && (
-                <TouchableOpacity
-                  style={styles.pathButton}
-                  onPress={() => pathMutation.mutate(goalTitle)}
-                  disabled={pathMutation.isPending}
-                >
-                  <Sparkles size={20} color={Colors.primary} />
-                  <Text style={styles.pathButtonText}>
-                    {pathMutation.isPending ? 'Suggesting ideas...' : 'Suggest ideas for me'}
-                  </Text>
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity
+                style={[styles.pathButton, isPathSuggestionsPending && { opacity: 0.6 }]}
+                onPress={handleRegenerateSuggestions}
+                disabled={isPathSuggestionsPending}
+                testID="goal-setup-regenerate-suggestions"
+              >
+                <Sparkles size={20} color={Colors.primary} />
+                <Text style={styles.pathButtonText}>
+                  {isPathSuggestionsPending ? 'Suggesting ideas...' : aiSuggestions.tasks.length + aiSuggestions.habits.length > 0 ? 'Regenerate ideas' : 'Suggest ideas for me'}
+                </Text>
+              </TouchableOpacity>
 
-              {pathMutation.isPending && (
+              {isPathSuggestionsPending && (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator color={Colors.primary} />
                   <Text style={styles.loadingText}>Creating your suggestions...</Text>
