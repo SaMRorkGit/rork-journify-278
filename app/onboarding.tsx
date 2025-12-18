@@ -572,7 +572,6 @@ export default function OnboardingScreen() {
               <Text style={styles.sectionTitle}>Vision</Text>
               <Text style={[styles.visionPrePrompt, styles.centeredText]}>Imagine a year from now…</Text>
               <Text style={[styles.question, styles.centeredText]}>Who do you want to be, and what life would feel meaningful?</Text>
-              <Text style={[styles.subtitle, styles.centeredText]}>Think gently about the life you want to grow into.</Text>
               <TextInput
                 style={[styles.textInput, styles.textArea, styles.visionInputArea]}
                 placeholder="I want to live a calmer, more intentional life and take better care of myself."
