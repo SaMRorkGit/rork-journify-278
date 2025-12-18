@@ -240,7 +240,7 @@ export default function OnboardingScreen() {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {step === 'name' && (
             <View style={styles.stepContainer}>
-              <Text style={styles.question}>What’s your name?</Text>
+              <Text style={styles.question}>What should we call you?</Text>
               <TextInput
                 style={styles.textInput}
                 placeholder="Enter your name"

@@ -25,7 +25,7 @@ const expoFlatConfigPatched = expoFlatConfig.map(config => ({
   ignores: [...(config.ignores ?? []), ...ignoredPaths],
   linterOptions: {
     ...(config.linterOptions ?? {}),
-    reportUnusedDisableDirectives: 'off',
+    reportUnusedDisableDirectives: false,
   },
 }));
 
@@ -33,26 +33,26 @@ module.exports = defineConfig([
   {
     ignores: ignoredPaths,
     linterOptions: {
-      reportUnusedDisableDirectives: 'off',
+      reportUnusedDisableDirectives: false,
     },
   },
   ...expoFlatConfigPatched,
   {
     files: [
-      '.expo/types/router.d.ts',
-      './.expo/types/router.d.ts',
-      '**/.expo/types/router.d.ts',
-      'expo/types/router.d.ts',
-      '**/expo/types/router.d.ts',
+      ".expo/types/router.d.ts",
+      "./.expo/types/router.d.ts",
+      "**/.expo/types/router.d.ts",
+      "expo/types/router.d.ts",
+      "**/expo/types/router.d.ts",
     ],
     rules: {},
     linterOptions: {
-      reportUnusedDisableDirectives: 'off',
+      reportUnusedDisableDirectives: "off",
     },
   },
   {
     linterOptions: {
-      reportUnusedDisableDirectives: 'off',
+      reportUnusedDisableDirectives: false,
     },
   },
 ]);
