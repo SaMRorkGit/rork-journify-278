@@ -649,7 +649,6 @@ Return ONLY a JSON object:
                           ]}
                         />
                         <View style={styles.goalPreviewCard}>
-                          <Text style={styles.goalPreviewEyebrow}>Your goal</Text>
                           <Text style={styles.goalPreviewText}>{goalTitle}</Text>
                         </View>
                       </>
@@ -696,7 +695,6 @@ Return ONLY a JSON object:
                           ]}
                         />
                         <View style={styles.goalPreviewCard}>
-                          <Text style={styles.goalPreviewEyebrow}>Your goal</Text>
                           <Text style={styles.goalPreviewText}>{goalTitle}</Text>
                         </View>
                       </>
