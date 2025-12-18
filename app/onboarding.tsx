@@ -8,7 +8,7 @@ import { useAppState } from '../contexts/AppStateContext';
 import type { Vision } from '../types';
 import Colors from '../constants/colors';
 
-type OnboardingStep = 'name' | 'interests' | 'goals' | 'encouragement' | 'vision' | 'ranking';
+type OnboardingStep = 'welcome' | 'name' | 'interests' | 'goals' | 'encouragement' | 'vision' | 'ranking';
 
 const INTEREST_OPTIONS = [
   'Reading', 'Watching movie', 'Listening to music', 'Traveling', 'Cooking',
@@ -40,7 +40,7 @@ export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const { state, updateUserProfile, updateVision, consumeVisionGuidePendingVision } = useAppState();
   
-  const [step, setStep] = useState<OnboardingStep>('name');
+  const [step, setStep] = useState<OnboardingStep>('welcome');
   const [name, setName] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
   const [customInterest, setCustomInterest] = useState('');
@@ -49,7 +49,36 @@ export default function OnboardingScreen() {
   const [visionText, setVisionText] = useState('');
   const [lifeAreaRanking, setLifeAreaRanking] = useState<string[]>([]);
   
-  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const breathAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 420,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breathAnim, {
+          toValue: 1,
+          duration: 2400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(breathAnim, {
+          toValue: 0,
+          duration: 2400,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    loop.start();
+    return () => loop.stop();
+  }, [breathAnim]);
 
   useEffect(() => {
     if (state.visionGuideSession?.pendingVision) {
@@ -58,7 +87,7 @@ export default function OnboardingScreen() {
     }
   }, [state.visionGuideSession?.pendingVision, consumeVisionGuidePendingVision]);
 
-  const steps: OnboardingStep[] = ['name', 'interests', 'goals', 'encouragement', 'vision', 'ranking'];
+  const steps: OnboardingStep[] = ['welcome', 'name', 'interests', 'goals', 'encouragement', 'vision', 'ranking'];
   const currentStepIndex = steps.indexOf(step);
   const totalSteps = steps.length + 6;
   const progress = ((currentStepIndex + 1) / totalSteps) * 100;
@@ -86,7 +115,8 @@ export default function OnboardingScreen() {
     }
 
     animateTransition(() => {
-      if (step === 'interests') setStep('name');
+      if (step === 'name') setStep('welcome');
+      else if (step === 'interests') setStep('name');
       else if (step === 'goals') setStep('interests');
       else if (step === 'encouragement') setStep('goals');
       else if (step === 'vision') setStep('encouragement');
@@ -100,7 +130,8 @@ export default function OnboardingScreen() {
     }
 
     animateTransition(() => {
-      if (step === 'name') setStep('interests');
+      if (step === 'welcome') setStep('name');
+      else if (step === 'name') setStep('interests');
       else if (step === 'interests') setStep('goals');
       else if (step === 'goals') setStep('encouragement');
       else if (step === 'encouragement') setStep('vision');
@@ -182,6 +213,7 @@ export default function OnboardingScreen() {
   };
 
   const canProceed = () => {
+    if (step === 'welcome') return true;
     if (step === 'name') return name.trim().length > 0;
     if (step === 'interests') return interests.length > 0;
     if (step === 'goals') return goals.length > 0;
@@ -195,13 +227,13 @@ export default function OnboardingScreen() {
     <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
       <View style={styles.header}>
         <View style={styles.topRow}>
-          {step !== 'name' && step !== 'encouragement' && (
-            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          {step !== 'welcome' && step !== 'name' && step !== 'encouragement' && (
+            <TouchableOpacity style={styles.backButton} onPress={handleBack} testID="onboarding-back">
               <ChevronLeft size={24} color={Colors.text} />
             </TouchableOpacity>
           )}
-          {(step === 'name' || step === 'encouragement') && <View style={styles.backButton} />}
-          <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+          {(step === 'welcome' || step === 'name' || step === 'encouragement') && <View style={styles.backButton} />}
+          <TouchableOpacity style={styles.skipButton} onPress={handleSkip} testID="onboarding-skip">
             <Text style={styles.skipText}>Skip</Text>
           </TouchableOpacity>
         </View>
@@ -212,6 +244,49 @@ export default function OnboardingScreen() {
 
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {step === 'welcome' && (
+            <View style={[styles.stepContainer, styles.welcomeContainer]} testID="onboarding-welcome">
+              <Animated.View
+                style={[
+                  styles.welcomeGlow,
+                  {
+                    opacity: breathAnim.interpolate({ inputRange: [0, 1], outputRange: [0.22, 0.42] }),
+                    transform: [
+                      {
+                        scale: breathAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+
+              <Animated.View
+                style={{
+                  opacity: fadeAnim,
+                  transform: [
+                    {
+                      translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }),
+                    },
+                  ],
+                }}
+              >
+                <Text style={styles.welcomeTitle} testID="onboarding-welcome-title">
+                  Welcome to <Text style={styles.welcomeBrand}>Journify</Text>
+                </Text>
+
+                <Text style={styles.welcomeSubText} testID="onboarding-welcome-subtext-1">
+                  This isn’t another productivity app.
+                </Text>
+
+                <Text style={[styles.welcomeSubText, styles.welcomeSubTextSpaced]} testID="onboarding-welcome-subtext-2">
+                  This is your space to grow gently,
+                  {'\n'}
+                  aligned with the person you want to be.
+                </Text>
+              </Animated.View>
+            </View>
+          )}
+
           {step === 'name' && (
             <View style={styles.stepContainer}>
               <Text style={styles.question}>What should we call you?</Text>
@@ -394,8 +469,9 @@ export default function OnboardingScreen() {
           style={[styles.nextButton, !canProceed() && styles.nextButtonDisabled]}
           onPress={handleNext}
           disabled={!canProceed()}
+          testID="onboarding-continue"
         >
-          <Text style={styles.nextButtonText}>
+          <Text style={styles.nextButtonText} testID="onboarding-continue-text">
             {step === 'encouragement' ? 'Begin my journey' : 'Continue'}
           </Text>
           {step !== 'encouragement' && <ChevronRight size={20} color={Colors.surface} />}
@@ -448,6 +524,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
+    paddingBottom: 20,
   },
   stepContainer: {
     paddingVertical: 20,
@@ -668,5 +745,44 @@ const styles = StyleSheet.create({
     color: Colors.text,
     textAlign: 'center' as const,
     fontWeight: '500' as const,
+  },
+  welcomeContainer: {
+    paddingTop: 40,
+    paddingBottom: 24,
+    justifyContent: 'center' as const,
+    minHeight: 420,
+  },
+  welcomeGlow: {
+    position: 'absolute' as const,
+    alignSelf: 'center' as const,
+    top: 40,
+    width: 210,
+    height: 210,
+    borderRadius: 105,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.32,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 12 },
+  },
+  welcomeTitle: {
+    fontSize: 34,
+    lineHeight: 40,
+    fontWeight: '800' as const,
+    color: Colors.text,
+    letterSpacing: -0.4,
+    marginBottom: 18,
+  },
+  welcomeBrand: {
+    color: Colors.primary,
+  },
+  welcomeSubText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: Colors.textSecondary,
+    fontWeight: '500' as const,
+  },
+  welcomeSubTextSpaced: {
+    marginTop: 10,
   },
 });
