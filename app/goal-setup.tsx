@@ -629,6 +629,35 @@ Return ONLY a JSON object:
           {step === 3 && (
             <View style={styles.stepContainer}>
               <Text style={styles.stepHeaderTitle}>Your Why</Text>
+
+              {goalTitle.trim().length > 0 ? (
+                <View style={styles.goalPreviewContainer}>
+                  {(() => {
+                    const theme =
+                      (selectedLifeArea && LIFE_AREA_THEMES[selectedLifeArea as keyof typeof LIFE_AREA_THEMES]) ||
+                      LIFE_AREA_THEMES.health;
+
+                    return (
+                      <>
+                        <View
+                          style={[
+                            styles.goalPreviewGlow,
+                            {
+                              backgroundColor: theme.color,
+                              shadowColor: theme.glow,
+                            },
+                          ]}
+                        />
+                        <View style={styles.goalPreviewCard}>
+                          <Text style={styles.goalPreviewEyebrow}>Your goal</Text>
+                          <Text style={styles.goalPreviewText}>{goalTitle}</Text>
+                        </View>
+                      </>
+                    );
+                  })()}
+                </View>
+              ) : null}
+
               <Text style={styles.stepTitle}>Why is this goal important to you?</Text>
               <Text style={styles.stepSubtext}>What positive change would this bring?</Text>
               <TextInput
@@ -647,6 +676,35 @@ Return ONLY a JSON object:
           {step === 4 && (
             <View style={styles.stepContainer}>
               <Text style={styles.stepHeaderTitle}>Success Criteria</Text>
+
+              {goalTitle.trim().length > 0 ? (
+                <View style={styles.goalPreviewContainer}>
+                  {(() => {
+                    const theme =
+                      (selectedLifeArea && LIFE_AREA_THEMES[selectedLifeArea as keyof typeof LIFE_AREA_THEMES]) ||
+                      LIFE_AREA_THEMES.health;
+
+                    return (
+                      <>
+                        <View
+                          style={[
+                            styles.goalPreviewGlow,
+                            {
+                              backgroundColor: theme.color,
+                              shadowColor: theme.glow,
+                            },
+                          ]}
+                        />
+                        <View style={styles.goalPreviewCard}>
+                          <Text style={styles.goalPreviewEyebrow}>Your goal</Text>
+                          <Text style={styles.goalPreviewText}>{goalTitle}</Text>
+                        </View>
+                      </>
+                    );
+                  })()}
+                </View>
+              ) : null}
+
               <Text style={styles.stepTitle}>What would &apos;success&apos; look like for you in this goal?</Text>
               <Text style={styles.stepSubtext}>Describe how life looks when you know you’re on track.</Text>
               <TextInput
@@ -1730,5 +1788,45 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.text,
     textAlign: 'center',
+  },
+  goalPreviewContainer: {
+    marginBottom: 18,
+    position: 'relative',
+    borderRadius: 18,
+  },
+  goalPreviewGlow: {
+    position: 'absolute' as const,
+    left: 8,
+    right: 8,
+    top: 6,
+    bottom: 6,
+    borderRadius: 18,
+    opacity: 0.22,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 22,
+    elevation: 10,
+  },
+  goalPreviewCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  goalPreviewEyebrow: {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    color: Colors.textSecondary,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  goalPreviewText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: Colors.text,
+    lineHeight: 22,
   },
 });
