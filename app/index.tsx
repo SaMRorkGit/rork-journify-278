@@ -16,11 +16,7 @@ export default function Index() {
     );
   }
 
-  if (!session) {
-    return <Redirect href="/login" />;
-  }
-
-  if (!state.userProfile?.onboardingCompleted) {
+  if (session && !state.userProfile?.onboardingCompleted) {
     return <Redirect href="/onboarding" />;
   }
 
