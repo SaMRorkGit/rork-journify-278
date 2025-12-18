@@ -213,7 +213,7 @@ export default function OnboardingScreen() {
       updateVision(vision);
     }
 
-    router.push({ pathname: '/goal-setup', params: { fromOnboarding: 'true' } });
+    router.replace('/(tabs)/today');
   };
 
   const toggleInterest = (interest: string) => {
