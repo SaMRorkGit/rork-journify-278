@@ -698,9 +698,7 @@ function ActionCard({
               ) : (
                 <Ionicons name="checkmark-circle-outline" size={12} color="#4A9DFF" style={{ marginRight: 4 }} />
               )}
-              <Text style={[styles.actionTagText, isHabit ? { color: '#AF9BFF' } : { color: '#4A9DFF' }]}> 
-                {isHabit ? 'Habit' : 'Task'}
-              </Text>
+              <Text style={[styles.actionTagText, isHabit ? { color: '#AF9BFF' } : { color: '#4A9DFF' }]}>{isHabit ? 'Habit' : 'Task'}</Text>
             </View>
             {isHabit && (
               <Text style={styles.habitFrequencyTextRight}>{getFrequencyText()}</Text>
