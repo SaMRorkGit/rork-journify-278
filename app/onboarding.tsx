@@ -3,7 +3,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Animated, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { ChevronRight, X, ChevronLeft, Sparkles } from 'lucide-react-native';
+import { ChevronRight, X, ChevronLeft, Sparkles, Check } from 'lucide-react-native';
 import { useAppState } from '../contexts/AppStateContext';
 import type { Vision } from '../types';
 import Colors from '../constants/colors';
@@ -267,11 +267,8 @@ export default function OnboardingScreen() {
 
   const toggleRanking = (area: string) => {
     setLifeAreaRanking(prev => {
-      if (prev.includes(area)) {
-        return prev.filter(a => a !== area);
-      } else {
-        return [...prev, area];
-      }
+      if (prev[0] === area) return [];
+      return [area];
     });
   };
 
@@ -284,7 +281,7 @@ export default function OnboardingScreen() {
     if (step === 'goals') return goals.length > 0;
     if (step === 'encouragement') return true;
     if (step === 'vision') return visionText.trim().length > 0;
-    if (step === 'ranking') return lifeAreaRanking.length === LIFE_AREAS.length;
+    if (step === 'ranking') return lifeAreaRanking.length === 1;
     return true;
   };
 
@@ -591,27 +588,29 @@ export default function OnboardingScreen() {
 
           {step === 'ranking' && (
             <View style={styles.stepContainer}>
-              <Text style={styles.sectionTitle}>Aspiration</Text>
-              <Text style={styles.question}>Rank the following areas of life in order of importance</Text>
-              <Text style={styles.subtitle}>Tap to select in order (1 being most important)</Text>
+              <Text style={styles.sectionTitle}>Life Area Focus</Text>
+              <Text style={styles.question}>What matters most to you right now?</Text>
+              <Text style={styles.subtitle}>Let’s focus on one for now.</Text>
               <View style={styles.optionsContainer}>
                 {LIFE_AREAS.map((area) => {
-                  const rank = lifeAreaRanking.indexOf(area.value);
-                  const isSelected = rank !== -1;
+                  const isSelected = lifeAreaRanking[0] === area.value;
                   return (
                     <TouchableOpacity
                       key={area.value}
                       style={[styles.rankButton, isSelected && styles.rankButtonSelected]}
                       onPress={() => toggleRanking(area.value)}
+                      activeOpacity={0.85}
+                      testID={`life-area-focus-${area.value}`}
                     >
-                      {isSelected && (
-                        <View style={styles.rankBadge}>
-                          <Text style={styles.rankBadgeText}>{rank + 1}</Text>
-                        </View>
-                      )}
-                      <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
-                        {area.label}
-                      </Text>
+                      <View style={styles.lifeAreaRow}>
+                        <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>{area.label}</Text>
+                        {isSelected && (
+                          <View style={styles.checkPill}>
+                            <Check size={16} color={Colors.surface} />
+                            <Text style={styles.checkPillText}>Selected</Text>
+                          </View>
+                        )}
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -819,6 +818,26 @@ const styles = StyleSheet.create({
   rankButtonSelected: {
     borderColor: Colors.primary,
     backgroundColor: Colors.primary + '10',
+  },
+  lifeAreaRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    flex: 1,
+  },
+  checkPill: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 6,
+    backgroundColor: Colors.primary,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  checkPillText: {
+    fontSize: 12,
+    fontWeight: '700' as const,
+    color: Colors.surface,
   },
   rankBadge: {
     width: 28,
