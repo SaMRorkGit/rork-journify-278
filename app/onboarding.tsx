@@ -8,7 +8,15 @@ import { useAppState } from '../contexts/AppStateContext';
 import type { Vision } from '../types';
 import Colors from '../constants/colors';
 
-type OnboardingStep = 'welcome' | 'name' | 'interests' | 'goals' | 'encouragement' | 'vision' | 'ranking';
+type OnboardingStep =
+  | 'welcome'
+  | 'momentum'
+  | 'name'
+  | 'interests'
+  | 'goals'
+  | 'encouragement'
+  | 'vision'
+  | 'ranking';
 
 const INTEREST_OPTIONS = [
   'Reading', 'Watching movie', 'Listening to music', 'Traveling', 'Cooking',
@@ -87,7 +95,16 @@ export default function OnboardingScreen() {
     }
   }, [state.visionGuideSession?.pendingVision, consumeVisionGuidePendingVision]);
 
-  const steps: OnboardingStep[] = ['welcome', 'name', 'interests', 'goals', 'encouragement', 'vision', 'ranking'];
+  const steps: OnboardingStep[] = [
+    'welcome',
+    'momentum',
+    'name',
+    'interests',
+    'goals',
+    'encouragement',
+    'vision',
+    'ranking',
+  ];
   const currentStepIndex = steps.indexOf(step);
   const totalSteps = steps.length + 6;
   const progress = ((currentStepIndex + 1) / totalSteps) * 100;
@@ -115,7 +132,8 @@ export default function OnboardingScreen() {
     }
 
     animateTransition(() => {
-      if (step === 'name') setStep('welcome');
+      if (step === 'momentum') setStep('welcome');
+      else if (step === 'name') setStep('momentum');
       else if (step === 'interests') setStep('name');
       else if (step === 'goals') setStep('interests');
       else if (step === 'encouragement') setStep('goals');
@@ -130,7 +148,8 @@ export default function OnboardingScreen() {
     }
 
     animateTransition(() => {
-      if (step === 'welcome') setStep('name');
+      if (step === 'welcome') setStep('momentum');
+      else if (step === 'momentum') setStep('name');
       else if (step === 'name') setStep('interests');
       else if (step === 'interests') setStep('goals');
       else if (step === 'goals') setStep('encouragement');
@@ -214,6 +233,7 @@ export default function OnboardingScreen() {
 
   const canProceed = () => {
     if (step === 'welcome') return true;
+    if (step === 'momentum') return true;
     if (step === 'name') return name.trim().length > 0;
     if (step === 'interests') return interests.length > 0;
     if (step === 'goals') return goals.length > 0;
@@ -227,12 +247,12 @@ export default function OnboardingScreen() {
     <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
       <View style={styles.header}>
         <View style={styles.topRow}>
-          {step !== 'welcome' && step !== 'name' && step !== 'encouragement' && (
+          {step !== 'welcome' && step !== 'momentum' && step !== 'name' && step !== 'encouragement' && (
             <TouchableOpacity style={styles.backButton} onPress={handleBack} testID="onboarding-back">
               <ChevronLeft size={24} color={Colors.text} />
             </TouchableOpacity>
           )}
-          {(step === 'welcome' || step === 'name' || step === 'encouragement') && <View style={styles.backButton} />}
+          {(step === 'welcome' || step === 'momentum' || step === 'name' || step === 'encouragement') && <View style={styles.backButton} />}
           <TouchableOpacity style={styles.skipButton} onPress={handleSkip} testID="onboarding-skip">
             <Text style={styles.skipText}>Skip</Text>
           </TouchableOpacity>
@@ -284,6 +304,31 @@ export default function OnboardingScreen() {
                   aligned with the person you want to be.
                 </Text>
               </Animated.View>
+            </View>
+          )}
+
+          {step === 'momentum' && (
+            <View style={styles.stepContainer} testID="onboarding-momentum">
+              <View style={styles.momentumCard}>
+                <Text style={styles.momentumText} testID="onboarding-momentum-text">
+                  With <Text style={styles.momentumBrand}>Journify</Text>, we don’t demand perfection.
+                  {'\n'}
+                  {'\n'}
+                  We celebrate momentum.
+                  {'\n'}
+                  We applaud progress.
+                  {'\n'}
+                  {'\n'}
+                  We understand life happens.
+                  {'\n'}
+                  Miss a day? No guilt.
+                  {'\n'}
+                  Just: “Ready to try again?”
+                  {'\n'}
+                  {'\n'}
+                  You’ll set a vision, take small actions, and see how you slowly transform into who you want to be, even on a busy week.
+                </Text>
+              </View>
             </View>
           )}
 
@@ -472,7 +517,7 @@ export default function OnboardingScreen() {
           testID="onboarding-continue"
         >
           <Text style={styles.nextButtonText} testID="onboarding-continue-text">
-            {step === 'encouragement' ? 'Begin my journey' : 'Continue'}
+            {step === 'momentum' ? 'I’m ready' : step === 'encouragement' ? 'Begin my journey' : 'Continue'}
           </Text>
           {step !== 'encouragement' && <ChevronRight size={20} color={Colors.surface} />}
         </TouchableOpacity>
@@ -784,5 +829,26 @@ const styles = StyleSheet.create({
   },
   welcomeSubTextSpaced: {
     marginTop: 10,
+  },
+  momentumCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+  },
+  momentumText: {
+    fontSize: 16,
+    lineHeight: 26,
+    color: Colors.text,
+    fontWeight: '500' as const,
+  },
+  momentumBrand: {
+    color: Colors.primary,
+    fontWeight: '800' as const,
   },
 });
