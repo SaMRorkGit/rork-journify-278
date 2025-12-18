@@ -8,23 +8,7 @@ import { useAppState } from '../contexts/AppStateContext';
 import type { Vision } from '../types';
 import Colors from '../constants/colors';
 
-type OnboardingStep = 'name' | 'age' | 'gender' | 'interests' | 'goals' | 'encouragement' | 'vision' | 'ranking';
-
-const AGE_GROUPS = [
-  { value: '18-24', label: '18-24' },
-  { value: '25-34', label: '25-34' },
-  { value: '35-44', label: '35-44' },
-  { value: '45-54', label: '45-54' },
-  { value: '55+', label: '55+' },
-  { value: 'prefer-not-to-say', label: 'Prefer not to say' },
-] as const;
-
-const GENDERS = [
-  { value: 'female', label: 'Female' },
-  { value: 'male', label: 'Male' },
-  { value: 'non-binary', label: 'Non-binary' },
-  { value: 'prefer-not-to-say', label: 'Prefer not to say' },
-] as const;
+type OnboardingStep = 'name' | 'interests' | 'goals' | 'encouragement' | 'vision' | 'ranking';
 
 const INTEREST_OPTIONS = [
   'Reading', 'Watching movie', 'Listening to music', 'Traveling', 'Cooking',
@@ -58,8 +42,6 @@ export default function OnboardingScreen() {
   
   const [step, setStep] = useState<OnboardingStep>('name');
   const [name, setName] = useState('');
-  const [ageGroup, setAgeGroup] = useState('');
-  const [gender, setGender] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
   const [customInterest, setCustomInterest] = useState('');
   const [goals, setGoals] = useState<string[]>([]);
@@ -76,7 +58,7 @@ export default function OnboardingScreen() {
     }
   }, [state.visionGuideSession?.pendingVision, consumeVisionGuidePendingVision]);
 
-  const steps: OnboardingStep[] = ['name', 'age', 'gender', 'interests', 'goals', 'encouragement', 'vision', 'ranking'];
+  const steps: OnboardingStep[] = ['name', 'interests', 'goals', 'encouragement', 'vision', 'ranking'];
   const currentStepIndex = steps.indexOf(step);
   const totalSteps = steps.length + 6;
   const progress = ((currentStepIndex + 1) / totalSteps) * 100;
@@ -104,9 +86,7 @@ export default function OnboardingScreen() {
     }
 
     animateTransition(() => {
-      if (step === 'age') setStep('name');
-      else if (step === 'gender') setStep('age');
-      else if (step === 'interests') setStep('gender');
+      if (step === 'interests') setStep('name');
       else if (step === 'goals') setStep('interests');
       else if (step === 'encouragement') setStep('goals');
       else if (step === 'vision') setStep('encouragement');
@@ -120,9 +100,7 @@ export default function OnboardingScreen() {
     }
 
     animateTransition(() => {
-      if (step === 'name') setStep('age');
-      else if (step === 'age') setStep('gender');
-      else if (step === 'gender') setStep('interests');
+      if (step === 'name') setStep('interests');
       else if (step === 'interests') setStep('goals');
       else if (step === 'goals') setStep('encouragement');
       else if (step === 'encouragement') setStep('vision');
@@ -143,8 +121,6 @@ export default function OnboardingScreen() {
   const handleComplete = () => {
     const profileData = {
       name: name || undefined,
-      ageGroup: ageGroup as any || undefined,
-      gender: gender as any || undefined,
       interests: interests.length > 0 ? interests : undefined,
       goals: goals.length > 0 ? goals : undefined,
       lifeAreaRanking: lifeAreaRanking as any || undefined,
@@ -207,8 +183,6 @@ export default function OnboardingScreen() {
 
   const canProceed = () => {
     if (step === 'name') return name.trim().length > 0;
-    if (step === 'age') return ageGroup !== '';
-    if (step === 'gender') return gender !== '';
     if (step === 'interests') return interests.length > 0;
     if (step === 'goals') return goals.length > 0;
     if (step === 'encouragement') return true;
@@ -252,43 +226,6 @@ export default function OnboardingScreen() {
             </View>
           )}
 
-          {step === 'age' && (
-            <View style={styles.stepContainer}>
-              <Text style={styles.question}>Which age group do you belong to?</Text>
-              <View style={styles.optionsContainer}>
-                {AGE_GROUPS.map((group) => (
-                  <TouchableOpacity
-                    key={group.value}
-                    style={[styles.optionButton, ageGroup === group.value && styles.optionButtonSelected]}
-                    onPress={() => setAgeGroup(group.value)}
-                  >
-                    <Text style={[styles.optionText, ageGroup === group.value && styles.optionTextSelected]}>
-                      {group.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {step === 'gender' && (
-            <View style={styles.stepContainer}>
-              <Text style={styles.question}>How do you identify yourself?</Text>
-              <View style={styles.optionsContainer}>
-                {GENDERS.map((g) => (
-                  <TouchableOpacity
-                    key={g.value}
-                    style={[styles.optionButton, gender === g.value && styles.optionButtonSelected]}
-                    onPress={() => setGender(g.value)}
-                  >
-                    <Text style={[styles.optionText, gender === g.value && styles.optionTextSelected]}>
-                      {g.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
 
           {step === 'interests' && (
             <View style={styles.stepContainer}>
