@@ -110,6 +110,7 @@ export interface UserProfile {
   gender?: 'female' | 'male' | 'non-binary' | 'prefer-not-to-say';
   interests?: string[];
   goals?: string[];
+  identityTags?: string[];
   lifeAreaRanking?: ('relationship' | 'career' | 'health' | 'finance' | 'growth')[];
   onboardingCompleted?: boolean;
 }

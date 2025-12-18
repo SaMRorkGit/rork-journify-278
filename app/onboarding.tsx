@@ -13,6 +13,7 @@ type OnboardingStep =
   | 'momentum'
   | 'name'
   | 'interests'
+  | 'identities'
   | 'goals'
   | 'encouragement'
   | 'vision'
@@ -23,6 +24,24 @@ const INTEREST_OPTIONS = [
   'Playing sports', 'Working out', 'Playing video game', 'Gardening', 'Art',
   'Photography', 'Hiking or camping', 'Dancing', 'Singing', 'Playing instrument',
   'Writing', 'Attending live events', 'Socializing with friends', 'Cars',
+];
+
+const IDENTITY_OPTIONS = [
+  { emoji: '🏃', label: 'Runner' },
+  { emoji: '🎨', label: 'Artist / Creative' },
+  { emoji: '👔', label: 'Professional / Leader' },
+  { emoji: '📚', label: 'Learner / Student' },
+  { emoji: '👨‍👩‍👧', label: 'Parent / Caregiver' },
+  { emoji: '🧘', label: 'Mindful person' },
+  { emoji: '🍳', label: 'Foodie / Chef' },
+  { emoji: '💼', label: 'Entrepreneur' },
+  { emoji: '📝', label: 'Writer' },
+  { emoji: '🎵', label: 'Musician' },
+  { emoji: '🌱', label: 'Gardener' },
+  { emoji: '🐕', label: 'Pet parent' },
+  { emoji: '🌍', label: 'Traveler' },
+  { emoji: '💪', label: 'Fitness enthusiast / Athlete' },
+  { emoji: '🧠', label: 'Thinker / Philosopher' },
 ];
 
 const GOAL_OPTIONS = [
@@ -54,6 +73,8 @@ export default function OnboardingScreen() {
   const [customInterest, setCustomInterest] = useState('');
   const [goals, setGoals] = useState<string[]>([]);
   const [customGoal, setCustomGoal] = useState('');
+  const [identityTags, setIdentityTags] = useState<string[]>([]);
+  const [customIdentity, setCustomIdentity] = useState('');
   const [visionText, setVisionText] = useState('');
   const [lifeAreaRanking, setLifeAreaRanking] = useState<string[]>([]);
   
@@ -100,6 +121,7 @@ export default function OnboardingScreen() {
     'momentum',
     'name',
     'interests',
+    'identities',
     'goals',
     'encouragement',
     'vision',
@@ -135,7 +157,8 @@ export default function OnboardingScreen() {
       if (step === 'momentum') setStep('welcome');
       else if (step === 'name') setStep('momentum');
       else if (step === 'interests') setStep('name');
-      else if (step === 'goals') setStep('interests');
+      else if (step === 'identities') setStep('interests');
+      else if (step === 'goals') setStep('identities');
       else if (step === 'encouragement') setStep('goals');
       else if (step === 'vision') setStep('encouragement');
       else if (step === 'ranking') setStep('vision');
@@ -151,7 +174,8 @@ export default function OnboardingScreen() {
       if (step === 'welcome') setStep('momentum');
       else if (step === 'momentum') setStep('name');
       else if (step === 'name') setStep('interests');
-      else if (step === 'interests') setStep('goals');
+      else if (step === 'interests') setStep('identities');
+      else if (step === 'identities') setStep('goals');
       else if (step === 'goals') setStep('encouragement');
       else if (step === 'encouragement') setStep('vision');
       else if (step === 'vision') setStep('ranking');
@@ -173,6 +197,7 @@ export default function OnboardingScreen() {
       name: name || undefined,
       interests: interests.length > 0 ? interests : undefined,
       goals: goals.length > 0 ? goals : undefined,
+      identityTags: identityTags.length > 0 ? identityTags : undefined,
       lifeAreaRanking: lifeAreaRanking as any || undefined,
       onboardingCompleted: true,
     };
@@ -221,6 +246,25 @@ export default function OnboardingScreen() {
     }
   };
 
+  const toggleIdentity = (identity: string) => {
+    setIdentityTags(prev => {
+      if (prev.includes(identity)) {
+        return prev.filter(i => i !== identity);
+      } else if (prev.length < 3) {
+        return [...prev, identity];
+      }
+      return prev;
+    });
+  };
+
+  const addCustomIdentity = () => {
+    const trimmed = customIdentity.trim();
+    if (trimmed && !identityTags.includes(trimmed) && identityTags.length < 3) {
+      setIdentityTags(prev => [...prev, trimmed]);
+      setCustomIdentity('');
+    }
+  };
+
   const toggleRanking = (area: string) => {
     setLifeAreaRanking(prev => {
       if (prev.includes(area)) {
@@ -236,6 +280,7 @@ export default function OnboardingScreen() {
     if (step === 'momentum') return true;
     if (step === 'name') return name.trim().length > 0;
     if (step === 'interests') return interests.length > 0;
+    if (step === 'identities') return identityTags.length > 0;
     if (step === 'goals') return goals.length > 0;
     if (step === 'encouragement') return true;
     if (step === 'vision') return visionText.trim().length > 0;
@@ -385,6 +430,69 @@ export default function OnboardingScreen() {
                   </TouchableOpacity>
                 </View>
               ))}
+            </View>
+          )}
+
+          {step === 'identities' && (
+            <View style={styles.stepContainer}>
+              <Text style={styles.question}>Which of these identities resonate with you the most?</Text>
+              <Text style={styles.subtitle}>Select up to 3</Text>
+              <View style={styles.identityGrid}>
+                {IDENTITY_OPTIONS.map((identity) => {
+                  const isSelected = identityTags.includes(identity.label);
+                  const isDisabled = !isSelected && identityTags.length >= 3;
+                  return (
+                    <TouchableOpacity
+                      key={identity.label}
+                      style={[
+                        styles.identityChip,
+                        isSelected && styles.identityChipSelected,
+                        isDisabled && styles.identityChipDisabled,
+                      ]}
+                      onPress={() => toggleIdentity(identity.label)}
+                      disabled={isDisabled}
+                    >
+                      <Text style={styles.identityEmoji}>{identity.emoji}</Text>
+                      <Text style={[
+                        styles.identityLabel,
+                        isSelected && styles.identityLabelSelected,
+                        isDisabled && styles.identityLabelDisabled,
+                      ]}>
+                        {identity.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <View style={styles.customInputContainer}>
+                <TextInput
+                  style={styles.customInput}
+                  placeholder="Add your own..."
+                  placeholderTextColor={Colors.textSecondary}
+                  value={customIdentity}
+                  onChangeText={setCustomIdentity}
+                  onSubmitEditing={addCustomIdentity}
+                  editable={identityTags.length < 3}
+                />
+                <TouchableOpacity
+                  style={[styles.addButton, identityTags.length >= 3 && styles.addButtonDisabled]}
+                  onPress={addCustomIdentity}
+                  disabled={identityTags.length >= 3}
+                >
+                  <Text style={styles.addButtonText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+              {identityTags.filter(i => !IDENTITY_OPTIONS.some(opt => opt.label === i)).map((identity) => (
+                <View key={identity} style={[styles.chip, styles.chipSelected, styles.customChip]}>
+                  <Text style={[styles.chipText, styles.chipTextSelected]}>{identity}</Text>
+                  <TouchableOpacity onPress={() => toggleIdentity(identity)}>
+                    <X size={16} color={Colors.surface} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              {identityTags.length > 0 && (
+                <Text style={styles.selectionCount}>{identityTags.length}/3 selected</Text>
+              )}
             </View>
           )}
 
@@ -850,5 +958,53 @@ const styles = StyleSheet.create({
   momentumBrand: {
     color: Colors.primary,
     fontWeight: '800' as const,
+  },
+  identityGrid: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: 10,
+    marginBottom: 16,
+  },
+  identityChip: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: Colors.surface,
+    borderRadius: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    gap: 6,
+  },
+  identityChipSelected: {
+    backgroundColor: Colors.primary + '15',
+    borderColor: Colors.primary,
+  },
+  identityChipDisabled: {
+    opacity: 0.4,
+  },
+  identityEmoji: {
+    fontSize: 18,
+  },
+  identityLabel: {
+    fontSize: 14,
+    fontWeight: '500' as const,
+    color: Colors.text,
+  },
+  identityLabelSelected: {
+    color: Colors.primary,
+    fontWeight: '600' as const,
+  },
+  identityLabelDisabled: {
+    color: Colors.textSecondary,
+  },
+  selectionCount: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginTop: 12,
+    textAlign: 'center' as const,
+  },
+  addButtonDisabled: {
+    opacity: 0.5,
   },
 });
