@@ -68,9 +68,14 @@ export default function GoalSetupScreen() {
   const { addGoal, addGoalTask, addHabit, state } = useAppState();
   
   const fromOnboarding = params.fromOnboarding === 'true';
+  const lockLifeArea = params.lockLifeArea === 'true';
+  const startStepParam = typeof params.startStep === 'string' ? Number(params.startStep) : undefined;
+  const startStep = (startStepParam && startStepParam >= 1 && startStepParam <= 6 ? (startStepParam as Step) : undefined) ?? (lockLifeArea ? 2 : 1);
 
-  const [step, setStep] = useState<Step>(1);
-  const [selectedLifeArea, setSelectedLifeArea] = useState<LifeArea | ''>('');
+  const selectedLifeAreaParam = (typeof params.selectedLifeArea === 'string' ? params.selectedLifeArea : undefined) as LifeArea | undefined;
+
+  const [step, setStep] = useState<Step>(startStep);
+  const [selectedLifeArea, setSelectedLifeArea] = useState<LifeArea | ''>(selectedLifeAreaParam ?? '');
   const [goalTitle, setGoalTitle] = useState((params.goalTitle as string) || '');
   const [why, setWhy] = useState('');
   const [successCriteria, setSuccessCriteria] = useState('');
@@ -89,6 +94,20 @@ export default function GoalSetupScreen() {
     setAiGoalSuggestions([]);
     setAiGoalIntro('');
   }, [selectedLifeArea]);
+
+  useEffect(() => {
+    if (selectedLifeAreaParam && selectedLifeArea !== selectedLifeAreaParam) {
+      console.log('[goal-setup] applying selectedLifeArea param', { selectedLifeAreaParam });
+      setSelectedLifeArea(selectedLifeAreaParam);
+    }
+  }, [selectedLifeAreaParam, selectedLifeArea]);
+
+  useEffect(() => {
+    if (lockLifeArea && step === 1) {
+      console.log('[goal-setup] lockLifeArea=true, skipping step 1');
+      setStep(2);
+    }
+  }, [lockLifeArea, step]);
 
   const pathMutation = useMutation({
     mutationFn: async (goal: string) => {
@@ -157,6 +176,11 @@ Example: {
   });
 
   const handleBack = () => {
+    if (lockLifeArea && step === 2) {
+      router.back();
+      return;
+    }
+
     if (typeof step === 'number' && step > 1) {
       setStep((s) => ((typeof s === 'number' ? s : 1) - 1) as Step);
     } else {
@@ -433,7 +457,7 @@ Return ONLY a JSON object:
 
   const canProceed = () => {
     if (step === 1) return selectedLifeArea !== '';
-    if (step === 2) return goalTitle.trim().length > 0;
+    if (step === 2) return selectedLifeArea !== '' && goalTitle.trim().length > 0;
     if (step === 3) return why.trim().length > 0;
     if (step === 4) return successCriteria.trim().length > 0;
     if (step === 5) return true;

@@ -179,7 +179,7 @@ export default function OnboardingScreen() {
       else if (step === 'goals') setStep('encouragement');
       else if (step === 'encouragement') setStep('vision');
       else if (step === 'vision') setStep('ranking');
-      else if (step === 'ranking') handleComplete();
+      else if (step === 'ranking') handleProceedToGoalSetup();
     });
   };
 
@@ -198,7 +198,7 @@ export default function OnboardingScreen() {
       interests: interests.length > 0 ? interests : undefined,
       goals: goals.length > 0 ? goals : undefined,
       identityTags: identityTags.length > 0 ? identityTags : undefined,
-      lifeAreaRanking: lifeAreaRanking as any || undefined,
+      lifeAreaRanking: lifeAreaRanking.length > 0 ? (lifeAreaRanking as any) : undefined,
       onboardingCompleted: true,
     };
 
@@ -212,8 +212,26 @@ export default function OnboardingScreen() {
       };
       updateVision(vision);
     }
+  };
 
-    router.replace('/(tabs)/today');
+  const handleProceedToGoalSetup = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+
+    handleComplete();
+
+    const selectedLifeArea = lifeAreaRanking[0] ?? '';
+
+    router.push({
+      pathname: '/goal-setup',
+      params: {
+        fromOnboarding: 'true',
+        startStep: '2',
+        selectedLifeArea,
+        lockLifeArea: 'true',
+      },
+    });
   };
 
   const toggleInterest = (interest: string) => {
