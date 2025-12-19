@@ -848,10 +848,10 @@ export default function TodayScreen() {
           </View>
         )}
 
-        <VisionEssenceCard state={state} />
+        {!isPastDay && <VisionEssenceCard state={state} />}
 
-        <Text style={styles.checkInTitleOutside}>DAILY CHECK-IN</Text>
-        <View style={styles.journalSection}>
+        {!isPastDay && <Text style={styles.checkInTitleOutside}>DAILY CHECK-IN</Text>}
+        {!isPastDay && <View style={styles.journalSection}>
           {(() => {
             const { morningCheckIn, middayCheckIn, eveningCheckIn } = getSelectedDayCheckIns();
             const currentCheckIn = checkInTimeOfDay === 'morning'
@@ -937,7 +937,7 @@ export default function TodayScreen() {
               </>
             );
           })()}
-        </View>
+        </View>}
 
         <Text style={styles.todaysActionsTitle}>TODAY’S ACTIONS</Text>
         <View style={styles.actionsCard}>
