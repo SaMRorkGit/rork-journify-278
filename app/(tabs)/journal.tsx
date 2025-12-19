@@ -108,9 +108,12 @@ export default function JournalScreen() {
 
               const reflectionTypes: string[] = [];
               if (entry.kind === 'checkIn') {
-                reflectionTypes.push(
-                  entry.data.type === 'morning' ? 'Morning Intention' : 'Evening Reflection'
-                );
+                const checkInTypeLabelMap = {
+                  morning: 'Morning Intention',
+                  midday: 'Midday Check-in',
+                  evening: 'Evening Reflection',
+                } as const;
+                reflectionTypes.push(checkInTypeLabelMap[entry.data.type]);
               } else if (entry.data.linkedGoalId || entry.data.tags?.includes('Goal')) {
                 reflectionTypes.push('Goal');
               }
