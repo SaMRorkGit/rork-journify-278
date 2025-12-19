@@ -20,6 +20,13 @@ export const trpcClient = trpc.createClient({
     httpLink({
       url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
+      fetch: (url, options) => {
+        return fetch(url, {
+          ...options,
+          // Set a 30 second timeout for TRPC requests
+          signal: AbortSignal.timeout(30000),
+        } as RequestInit);
+      },
     }),
   ],
 });

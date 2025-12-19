@@ -39,4 +39,14 @@ export const supabase = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '', {
     persistSession: true,
     detectSessionInUrl: false,
   },
+  global: {
+    headers: { 'x-application-name': 'rork-app' },
+  },
+  realtime: {
+    params: {
+      events_per_second: 10,
+    },
+    timeout: 30000,
+    heartbeatIntervalMs: 3000,
+  },
 });
