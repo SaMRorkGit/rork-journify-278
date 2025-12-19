@@ -25,11 +25,16 @@ export default function AspirationsScreen() {
   const profile = state.userProfile;
 
   const sortedLifeAreas = useMemo(() => {
-    const lifeAreasArray: LifeArea[] = ['relationship', 'career', 'health', 'finance', 'growth'];
-    if (profile?.lifeAreaRanking && profile.lifeAreaRanking.length > 0) {
-      return profile.lifeAreaRanking;
-    }
-    return lifeAreasArray;
+    const allLifeAreas: LifeArea[] = ['relationship', 'career', 'health', 'finance', 'growth'];
+
+    const ranked = (profile?.lifeAreaRanking ?? []).filter((v): v is LifeArea =>
+      allLifeAreas.includes(v),
+    );
+
+    const rankedSet = new Set<LifeArea>(ranked);
+    const remaining = allLifeAreas.filter(a => !rankedSet.has(a));
+
+    return ranked.length > 0 ? [...ranked, ...remaining] : allLifeAreas;
   }, [profile?.lifeAreaRanking]);
 
   const handleLifeAreaPress = useCallback(
