@@ -1,6 +1,6 @@
 export type MoodType = 'great' | 'fine' | 'neutral' | 'stressed' | 'low';
 
-export type CheckInType = 'morning' | 'evening';
+export type CheckInType = 'morning' | 'midday' | 'evening';
 
 export interface DailyCheckIn {
   id: string;

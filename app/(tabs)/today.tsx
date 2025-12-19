@@ -1,6 +1,6 @@
 import { Stack, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Award, ChevronDown, ChevronRight, Moon, Plus, Sun } from 'lucide-react-native';
+import { Award, ChevronDown, ChevronRight, Plus } from 'lucide-react-native';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, PanResponder, Animated, ActivityIndicator } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,56 @@ import { generateText } from '@rork-ai/toolkit-sdk';
 import { useAppState, useTodayTodos, useTodayHabits, useTodayGoalTasks } from '../../contexts/AppStateContext';
 import type { Todo, MoodType, DailyCheckIn, CheckInType, AppState } from '../../types';
 import Colors from '../../constants/colors';
+
+const CHECK_IN_PROMPT = `You are a compassionate personal growth companion generating a check-in prompt. 
+
+INPUT: 
+- Time of day: [morning/midday/evening]
+- Today's actions: [list of habits/tasks for today, e.g., "Morning walk, Review presentation, Take stairs"]
+
+YOUR TASK: Generate ONE brief check-in prompt appropriate for each state based on time of day.
+
+TONE REQUIREMENTS: 
+- Warm and encouraging, like a caring friend, therapeutic 
+- Conversational, not robotic or clinical 
+- Very brief: 1 sentence only  
+- Gentle, never demanding or guilt-inducing - Natural and simple 
+
+
+MORNING PROMPTS: 
+Help the user set intentions for their day. 
+Focus on: possibility, what matters, fresh start energy 
+Examples: - 
+"What would make today feel meaningful?"
+“What's your one thing today?"
+"How do you want to show up today?" 
+"What matters most today?"
+
+
+MIDDAY PROMPTS: 
+Quick, optional check-in on how the day is going. 
+Focus on: brief touch-point, acknowledge reality, no pressure 
+Examples: 
+- "How's your day unfolding?"
+- "How are you feeling about today so far?" 
+- "What's going well?" 
+
+
+EVENING PROMPTS: 
+Invite reflection on the day with closure and peace. 
+Focus on: honest reflection, celebrate what happened, calm closure Examples: 
+- "How did today go?" 
+- "What deserves celebration today, even if small?" 
+- "What made today good or hard?" 
+- "What are you taking from today into tomorrow?"
+- “How was your energy today?”`;
+
+const getCheckInTimeOfDay = (now: Date = new Date()): CheckInType => {
+  const hour = now.getHours();
+  if (hour >= 4 && hour <= 11) return 'morning';
+  if (hour >= 12 && hour <= 17) return 'midday';
+  return 'evening';
+};
 
 export default function TodayScreen() {
   const insets = useSafeAreaInsets();
@@ -21,10 +71,7 @@ export default function TodayScreen() {
   const habits = useTodayHabits();
   const goalTasks = useTodayGoalTasks();
   const [newTodoTitle, setNewTodoTitle] = useState('');
-  const [activeCheckInTab, setActiveCheckInTab] = useState<'morning' | 'evening'>(() => {
-    const hour = new Date().getHours();
-    return hour >= 0 && hour < 17 ? 'morning' : 'evening';
-  });
+  const checkInTimeOfDay: CheckInType = getCheckInTimeOfDay();
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
   const [checkInReflection, setCheckInReflection] = useState('');
   const [isEditingCheckIn, setIsEditingCheckIn] = useState(false);
@@ -78,27 +125,75 @@ export default function TodayScreen() {
   const getTodayCheckIns = () => {
     const today = new Date().toISOString().split('T')[0] || '';
     const morningCheckIn = state.dailyCheckIns.find(c => c.date === today && c.type === 'morning');
+    const middayCheckIn = state.dailyCheckIns.find(c => c.date === today && c.type === 'midday');
     const eveningCheckIn = state.dailyCheckIns.find(c => c.date === today && c.type === 'evening');
-    return { morningCheckIn, eveningCheckIn, today };
+    return { morningCheckIn, middayCheckIn, eveningCheckIn, today };
   };
 
-  const getCheckInConfig = (type: CheckInType) => {
-    if (type === 'morning') {
-      return {
-        title: 'Morning Intention',
-        subtext: 'How are you today?',
-        placeholder: "What's on your mind now?",
-        buttonMessage: "Thanks for checking in. Let's take today one gentle step at a time.",
-      };
-    } else {
-      return {
-        title: 'Evening Reflection',
-        subtext: 'How was your day?',
-        placeholder: 'What felt good about today?',
-        buttonMessage: 'Nice work checking in this evening. A moment of reflection is a gift to your future self.',
-      };
-    }
-  };
+  const todaysActionsList = useMemo(() => {
+    const pieces: string[] = [];
+
+    habits.forEach(h => {
+      pieces.push(h.title);
+    });
+
+    goalTasks.forEach((t: any) => {
+      if (typeof t?.title === 'string' && t.title.trim().length > 0) {
+        pieces.push(t.title);
+      }
+    });
+
+    todos.forEach(t => {
+      if (typeof t?.title === 'string' && t.title.trim().length > 0) {
+        pieces.push(t.title);
+      }
+    });
+
+    const unique = Array.from(new Set(pieces.map(p => p.trim()).filter(Boolean)));
+    return unique.slice(0, 12);
+  }, [habits, goalTasks, todos]);
+
+  const { data: checkInPrompt, isFetching: isCheckInPromptFetching, isError: isCheckInPromptError } = useQuery({
+    queryKey: ['daily-checkin-prompt', checkInTimeOfDay, todaysActionsList],
+    queryFn: async () => {
+      const timeOfDayText = checkInTimeOfDay;
+      const actionsText = todaysActionsList.length > 0 ? todaysActionsList.join(', ') : 'None listed';
+
+      console.log('[DailyCheckInPrompt] Generating prompt', { timeOfDayText, actionsCount: todaysActionsList.length });
+
+      const response = await generateText({
+        messages: [
+          {
+            role: 'user',
+            content: `${CHECK_IN_PROMPT}\n\nINPUT:\n- Time of day: ${timeOfDayText}\n- Today's actions: ${actionsText}`,
+          },
+        ],
+        temperature: 0.75,
+        topP: 0.9,
+        frequencyPenalty: 0.3,
+        presencePenalty: 0.15,
+      });
+
+      const cleaned = response.replace(/^['"\s]+|['"\s]+$/g, '').replace(/\s+/g, ' ').trim();
+      if (!cleaned) {
+        throw new Error('Empty check-in prompt response');
+      }
+
+      return cleaned;
+    },
+    staleTime: 1000 * 60 * 10,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const checkInPlaceholder = "Write a few words for future you…";
+
+  const checkInSubtext = useMemo(() => {
+    if (isCheckInPromptFetching && !checkInPrompt) return '…';
+    if (checkInPrompt) return checkInPrompt;
+    if (isCheckInPromptError) return 'How are you feeling right now?';
+    return 'How are you feeling right now?';
+  }, [checkInPrompt, isCheckInPromptError, isCheckInPromptFetching]);
 
   const getMoodEvaluation = () => {
     const { morningCheckIn, eveningCheckIn } = getTodayCheckIns();
@@ -119,11 +214,11 @@ export default function TodayScreen() {
   const handleCheckIn = () => {
     if (!selectedMood) return;
 
-    const checkInType = activeCheckInTab;
+    const checkInType = checkInTimeOfDay;
     const { today } = getTodayCheckIns();
     
-    const { morningCheckIn, eveningCheckIn } = getTodayCheckIns();
-    const currentCheckIn = checkInType === 'morning' ? morningCheckIn : eveningCheckIn;
+    const { morningCheckIn, middayCheckIn, eveningCheckIn } = getTodayCheckIns();
+    const currentCheckIn = checkInType === 'morning' ? morningCheckIn : checkInType === 'midday' ? middayCheckIn : eveningCheckIn;
 
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -150,8 +245,8 @@ export default function TodayScreen() {
   };
 
   const handleEditCheckIn = () => {
-    const { morningCheckIn, eveningCheckIn } = getTodayCheckIns();
-    const currentCheckIn = activeCheckInTab === 'morning' ? morningCheckIn : eveningCheckIn;
+    const { morningCheckIn, middayCheckIn, eveningCheckIn } = getTodayCheckIns();
+    const currentCheckIn = checkInTimeOfDay === 'morning' ? morningCheckIn : checkInTimeOfDay === 'midday' ? middayCheckIn : eveningCheckIn;
     
     if (currentCheckIn) {
       setSelectedMood(currentCheckIn.mood);
@@ -294,45 +389,19 @@ export default function TodayScreen() {
 
         <Text style={styles.checkInTitleOutside}>DAILY CHECK-IN</Text>
         <View style={styles.journalSection}>
-          <View style={styles.checkInTabs}>
-            <TouchableOpacity 
-              style={[styles.checkInTab, activeCheckInTab === 'morning' && styles.checkInTabActive]}
-              onPress={() => {
-                setActiveCheckInTab('morning');
-                setCheckInReflection('');
-                setSelectedMood(null);
-                setIsEditingCheckIn(false);
-                if (Platform.OS !== 'web') Haptics.selectionAsync();
-              }}
-            >
-              <Sun size={16} color={activeCheckInTab === 'morning' ? Colors.primary : Colors.textSecondary} />
-              <Text style={[styles.checkInTabText, activeCheckInTab === 'morning' && styles.checkInTabTextActive]}>Morning Intention</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.checkInTab, activeCheckInTab === 'evening' && styles.checkInTabActive]}
-              onPress={() => {
-                setActiveCheckInTab('evening');
-                setCheckInReflection('');
-                setSelectedMood(null);
-                setIsEditingCheckIn(false);
-                if (Platform.OS !== 'web') Haptics.selectionAsync();
-              }}
-            >
-              <Moon size={16} color={activeCheckInTab === 'evening' ? Colors.primary : Colors.textSecondary} />
-              <Text style={[styles.checkInTabText, activeCheckInTab === 'evening' && styles.checkInTabTextActive]}>Evening Reflection</Text>
-            </TouchableOpacity>
-          </View>
-
           {(() => {
-            const config = getCheckInConfig(activeCheckInTab);
-            const { morningCheckIn, eveningCheckIn } = getTodayCheckIns();
-            const currentCheckIn = activeCheckInTab === 'morning' ? morningCheckIn : eveningCheckIn;
+            const { morningCheckIn, middayCheckIn, eveningCheckIn } = getTodayCheckIns();
+            const currentCheckIn = checkInTimeOfDay === 'morning'
+              ? morningCheckIn
+              : checkInTimeOfDay === 'midday'
+                ? middayCheckIn
+                : eveningCheckIn;
             const showCheckInForm = !currentCheckIn || isEditingCheckIn;
             const evaluation = getMoodEvaluation();
 
             return (
               <>
-                <Text style={styles.checkInSubtext}>{config.subtext}</Text>
+                <Text style={styles.checkInSubtext} testID="daily-checkin-prompt-text">{checkInSubtext}</Text>
 
                 {showCheckInForm ? (
                   <>
@@ -363,13 +432,14 @@ export default function TodayScreen() {
                     </View>
                     <TextInput
                       style={styles.journalInput}
-                      placeholder={config.placeholder}
+                      placeholder={checkInPlaceholder}
                       placeholderTextColor={Colors.textSecondary}
                       multiline
                       numberOfLines={2}
                       value={checkInReflection}
                       onChangeText={setCheckInReflection}
                       textAlignVertical="top"
+                      testID="daily-checkin-input"
                     />
                     <TouchableOpacity
                       style={[styles.reflectButton, !selectedMood && styles.reflectButtonDisabled]}
@@ -389,14 +459,14 @@ export default function TodayScreen() {
                             {getSummaryText(currentCheckIn.reflection)}
                           </Text>
                         )}
-                        <TouchableOpacity style={styles.editCheckInButton} onPress={handleEditCheckIn}>
+                        <TouchableOpacity style={styles.editCheckInButton} onPress={handleEditCheckIn} testID="daily-checkin-edit-button">
                           <Ionicons name="pencil-outline" size={16} color={Colors.primary} />
                         </TouchableOpacity>
                       </View>
                     </View>
-                    {activeCheckInTab === 'evening' && morningCheckIn && eveningCheckIn && evaluation && (
-                      <View style={styles.evaluationCard}>
-                        <Text style={styles.evaluationText}>{evaluation}</Text>
+                    {checkInTimeOfDay === 'evening' && morningCheckIn && eveningCheckIn && evaluation && (
+                      <View style={styles.evaluationCard} testID="daily-checkin-evaluation-card">
+                        <Text style={styles.evaluationText} testID="daily-checkin-evaluation-text">{evaluation}</Text>
                       </View>
                     )}
                   </>

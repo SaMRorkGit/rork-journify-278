@@ -869,7 +869,9 @@ export const [AppStateProvider, useAppState] = createContextHook(() => {
     const toastMessage =
       checkIn.type === 'evening'
         ? 'Nice work checking in this evening. A moment of reflection is a gift to your future self.'
-        : "Thanks for checking in. Let's take today one gentle step at a time.";
+        : checkIn.type === 'midday'
+          ? 'Thanks for checking in. A small pause counts.'
+          : "Thanks for checking in. Let's take today one gentle step at a time.";
     showToast(toastMessage);
   }, [persistState, showToast]);
 
