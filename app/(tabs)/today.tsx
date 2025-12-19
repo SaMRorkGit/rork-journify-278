@@ -1,15 +1,28 @@
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Award, ChevronDown, ChevronRight, Plus, Quote } from 'lucide-react-native';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, PanResponder, Animated, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Platform,
+  PanResponder,
+  Animated,
+  ActivityIndicator,
+} from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { generateText } from '@rork-ai/toolkit-sdk';
-import { useAppState, useTodayTodos, useTodayHabits, useTodayGoalTasks } from '../../contexts/AppStateContext';
-import type { Todo, MoodType, DailyCheckIn, CheckInType, AppState } from '../../types';
+import { useAppState } from '../../contexts/AppStateContext';
+import type { Todo, MoodType, DailyCheckIn, CheckInType, AppState, Habit } from '../../types';
 import Colors from '../../constants/colors';
+
+type HabitWithComputed = Habit & { completedToday: boolean; todayValue?: number };
 
 const DAILY_QUOTE_PROMPT = `Generate a short, meaningful quote for someone on a personal growth journey.
 
@@ -113,17 +126,70 @@ const getCheckInTimeOfDay = (now: Date = new Date()): CheckInType => {
   return 'evening';
 };
 
+const getDateKey = (date: Date): string => {
+  const raw = date.toISOString().split('T')[0];
+  return raw || 'unknown-day';
+};
+
+const parseDateParam = (value: unknown): Date | null => {
+  if (typeof value !== 'string' || value.trim().length === 0) return null;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+};
+
+const getHabitFrequencyForDay = (habit: Habit, dayOfWeek: number): boolean => {
+  if (habit.frequency === 'daily') return true;
+  if (habit.frequency === 'weekly') {
+    const weekDays = habit.weekDays ?? [];
+    return weekDays.includes(dayOfWeek);
+  }
+  return false;
+};
+
 export default function TodayScreen() {
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams();
   const appState = useAppState();
-  
+
   const { state, toggleTodo, toggleHabitCompletion, toggleGoalTask, addTodo, calculateXPForLevel, addDailyCheckIn, updateDailyCheckIn } = appState;
   const router = useRouter();
-  const todos = useTodayTodos();
-  const habits = useTodayHabits();
-  const goalTasks = useTodayGoalTasks();
+
+  const selectedDate = useMemo(() => {
+    const parsed = parseDateParam(params?.date);
+    return parsed ?? new Date();
+  }, [params?.date]);
+
+  const selectedDateKey = useMemo(() => getDateKey(selectedDate), [selectedDate]);
+  const selectedDayOfWeek = useMemo(() => selectedDate.getDay(), [selectedDate]);
+  const isViewingToday = useMemo(() => getDateKey(new Date()) === selectedDateKey, [selectedDateKey]);
+
+  const todos = useMemo(() => state.todos, [state.todos]);
+
+  const goalTasks = useMemo(() => {
+    return state.goalTasks.filter(task => {
+      if (!task.dueDate) return true;
+      const taskDate = task.dueDate;
+      return taskDate === selectedDateKey || (!task.completed && taskDate < selectedDateKey);
+    });
+  }, [selectedDateKey, state.goalTasks]);
+
+  const habits = useMemo(() => {
+    return state.habits
+      .filter(habit => getHabitFrequencyForDay(habit, selectedDayOfWeek))
+      .map(habit => {
+        const completedToday = habit.completedDates.includes(selectedDateKey);
+        const todayValue = habit.trackingData?.[selectedDateKey];
+        return {
+          ...habit,
+          completedToday,
+          todayValue,
+        };
+      });
+  }, [selectedDateKey, selectedDayOfWeek, state.habits]);
+
   const [newTodoTitle, setNewTodoTitle] = useState('');
-  const checkInTimeOfDay: CheckInType = getCheckInTimeOfDay();
+  const checkInTimeOfDay: CheckInType = getCheckInTimeOfDay(isViewingToday ? new Date() : selectedDate);
   const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
   const [checkInReflection, setCheckInReflection] = useState('');
   const [isEditingCheckIn, setIsEditingCheckIn] = useState(false);
@@ -159,7 +225,7 @@ export default function TodayScreen() {
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-    toggleHabitCompletion(id, new Date().toISOString());
+    toggleHabitCompletion(id, `${selectedDateKey}T12:00:00.000Z`);
   };
 
   const handleTaskEdit = (id: string, isGoalTask: boolean) => {
@@ -174,12 +240,11 @@ export default function TodayScreen() {
     router.push({ pathname: '/habit-edit' as any, params: { id: habitId } });
   };
 
-  const getTodayCheckIns = () => {
-    const today = new Date().toISOString().split('T')[0] || '';
-    const morningCheckIn = state.dailyCheckIns.find(c => c.date === today && c.type === 'morning');
-    const middayCheckIn = state.dailyCheckIns.find(c => c.date === today && c.type === 'midday');
-    const eveningCheckIn = state.dailyCheckIns.find(c => c.date === today && c.type === 'evening');
-    return { morningCheckIn, middayCheckIn, eveningCheckIn, today };
+  const getSelectedDayCheckIns = () => {
+    const morningCheckIn = state.dailyCheckIns.find(c => c.date === selectedDateKey && c.type === 'morning');
+    const middayCheckIn = state.dailyCheckIns.find(c => c.date === selectedDateKey && c.type === 'midday');
+    const eveningCheckIn = state.dailyCheckIns.find(c => c.date === selectedDateKey && c.type === 'evening');
+    return { morningCheckIn, middayCheckIn, eveningCheckIn, dateKey: selectedDateKey };
   };
 
   const todaysActionsList = useMemo(() => {
@@ -240,10 +305,7 @@ export default function TodayScreen() {
 
   const checkInPlaceholder = "Write a few words for future you…";
 
-  const todayDateKey = useMemo(() => {
-    const raw = new Date().toISOString().split('T')[0];
-    return raw || 'unknown-day';
-  }, []);
+  const todayDateKey = useMemo(() => selectedDateKey, [selectedDateKey]);
 
   const { data: dailyQuote, isFetching: isDailyQuoteFetching, isError: isDailyQuoteError } = useQuery({
     queryKey: ['daily-quote', todayDateKey],
@@ -291,7 +353,7 @@ export default function TodayScreen() {
   }, [checkInPrompt, isCheckInPromptError, isCheckInPromptFetching]);
 
   const getMoodEvaluation = () => {
-    const { morningCheckIn, eveningCheckIn } = getTodayCheckIns();
+    const { morningCheckIn, eveningCheckIn } = getSelectedDayCheckIns();
     if (!morningCheckIn || !eveningCheckIn) return null;
 
     const moodOrder: MoodType[] = ['great', 'fine', 'neutral', 'stressed', 'low'];
@@ -310,9 +372,9 @@ export default function TodayScreen() {
     if (!selectedMood) return;
 
     const checkInType = checkInTimeOfDay;
-    const { today } = getTodayCheckIns();
+    const { dateKey } = getSelectedDayCheckIns();
     
-    const { morningCheckIn, middayCheckIn, eveningCheckIn } = getTodayCheckIns();
+    const { morningCheckIn, middayCheckIn, eveningCheckIn } = getSelectedDayCheckIns();
     const currentCheckIn = checkInType === 'morning' ? morningCheckIn : checkInType === 'midday' ? middayCheckIn : eveningCheckIn;
 
     if (Platform.OS !== 'web') {
@@ -327,7 +389,7 @@ export default function TodayScreen() {
     } else {
       const newCheckIn: DailyCheckIn = {
         id: Date.now().toString(),
-        date: today,
+        date: dateKey,
         type: checkInType,
         mood: selectedMood,
         reflection: checkInReflection,
@@ -340,7 +402,7 @@ export default function TodayScreen() {
   };
 
   const handleEditCheckIn = () => {
-    const { morningCheckIn, middayCheckIn, eveningCheckIn } = getTodayCheckIns();
+    const { morningCheckIn, middayCheckIn, eveningCheckIn } = getSelectedDayCheckIns();
     const currentCheckIn = checkInTimeOfDay === 'morning' ? morningCheckIn : checkInTimeOfDay === 'midday' ? middayCheckIn : eveningCheckIn;
     
     if (currentCheckIn) {
@@ -369,7 +431,7 @@ export default function TodayScreen() {
   };
 
   const getSortedActions = (
-    habits: ReturnType<typeof useTodayHabits>,
+    habits: HabitWithComputed[],
     todos: Todo[],
     goalTasks: any[],
     state: any
@@ -383,7 +445,7 @@ export default function TodayScreen() {
       goalId?: string;
     }[] = [];
 
-    habits.forEach((habit) => {
+    habits.forEach((habit: HabitWithComputed) => {
       items.push({
         id: habit.id,
         type: 'habit',
@@ -454,10 +516,10 @@ export default function TodayScreen() {
             <View style={styles.headerLeft}>
               <Text style={styles.headerTitle}>Today</Text>
               <Text style={styles.headerSubtitle}>
-                {new Date().toLocaleDateString('en-US', { 
+                {selectedDate.toLocaleDateString('en-US', {
                   weekday: 'long',
                   month: 'long',
-                  day: 'numeric'
+                  day: 'numeric',
                 })}
               </Text>
             </View>
@@ -478,14 +540,21 @@ export default function TodayScreen() {
           </View>
         </View>
 
-        <WeekPreview isCompletedToday={isEverythingCompletedToday()} />
+        <WeekPreview
+          isCompletedToday={isEverythingCompletedToday()}
+          selectedDateKey={selectedDateKey}
+          onSelectDateKey={(dateKey) => {
+            console.log('[Today] WeekPreview select day', { dateKey });
+            router.setParams({ date: dateKey } as any);
+          }}
+        />
 
         <VisionEssenceCard state={state} />
 
         <Text style={styles.checkInTitleOutside}>DAILY CHECK-IN</Text>
         <View style={styles.journalSection}>
           {(() => {
-            const { morningCheckIn, middayCheckIn, eveningCheckIn } = getTodayCheckIns();
+            const { morningCheckIn, middayCheckIn, eveningCheckIn } = getSelectedDayCheckIns();
             const currentCheckIn = checkInTimeOfDay === 'morning'
               ? morningCheckIn
               : checkInTimeOfDay === 'midday'
@@ -610,7 +679,7 @@ export default function TodayScreen() {
                   const goal = item.goalId ? state.goals.find((g: any) => g.id === item.goalId) : undefined;
                   
                   if (item.type === 'habit') {
-                    const habit = item.data as ReturnType<typeof useTodayHabits>[number];
+                    const habit = item.data as HabitWithComputed;
                     return (
                       <ActionCard
                         key={item.id}
@@ -657,7 +726,7 @@ export default function TodayScreen() {
                       const goal = item.goalId ? state.goals.find((g: any) => g.id === item.goalId) : undefined;
                       
                       if (item.type === 'habit') {
-                        const habit = item.data as ReturnType<typeof useTodayHabits>[number];
+                        const habit = item.data as HabitWithComputed;
                         return (
                           <ActionCard
                             key={item.id}
@@ -880,44 +949,72 @@ function ActionCard({
   );
 }
 
-function WeekPreview({ isCompletedToday }: { isCompletedToday: boolean }) {
-  const today = new Date();
-  const days = [];
-  
-  for (let i = -3; i <= 3; i++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() + i);
-    days.push({
-      date,
-      isToday: i === 0,
-      dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
-      dayNum: date.getDate(),
-    });
-  }
+function WeekPreview({
+  isCompletedToday,
+  selectedDateKey,
+  onSelectDateKey,
+}: {
+  isCompletedToday: boolean;
+  selectedDateKey: string;
+  onSelectDateKey: (dateKey: string) => void;
+}) {
+  const selectedDate = useMemo(() => {
+    const parsed = parseDateParam(selectedDateKey);
+    return parsed ?? new Date();
+  }, [selectedDateKey]);
+
+  const weekStart = useMemo(() => {
+    const base = new Date(selectedDate);
+    base.setHours(0, 0, 0, 0);
+    const day = base.getDay();
+    const diffToMonday = (day + 6) % 7;
+    base.setDate(base.getDate() - diffToMonday);
+    return base;
+  }, [selectedDate]);
+
+  const todayKey = useMemo(() => getDateKey(new Date()), []);
+
+  const days = useMemo(() => {
+    const list: { dateKey: string; isToday: boolean; isSelected: boolean; dayName: string; dayNum: number }[] = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
+      const dateKey = getDateKey(date);
+      list.push({
+        dateKey,
+        isToday: dateKey === todayKey,
+        isSelected: dateKey === selectedDateKey,
+        dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        dayNum: date.getDate(),
+      });
+    }
+    return list;
+  }, [selectedDateKey, todayKey, weekStart]);
 
   return (
     <View style={styles.weekPreview}>
-      {days.map((day, index) => (
-        <View
-          key={index}
-          style={[
-            styles.dayItem,
-            day.isToday && styles.dayItemToday,
-          ]}
+      {days.map((day) => (
+        <TouchableOpacity
+          key={day.dateKey}
+          style={[styles.dayItem, day.isSelected && styles.dayItemToday]}
+          onPress={() => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+            onSelectDateKey(day.dateKey);
+          }}
+          activeOpacity={0.85}
+          testID={`week-preview-day-${day.dateKey}`}
         >
-          <Text style={[styles.dayName, day.isToday && styles.dayNameToday]}>
-            {day.dayName}
-          </Text>
-          <View style={[styles.dayCircle, day.isToday && styles.dayCircleToday]}>
+          <Text style={[styles.dayName, day.isSelected && styles.dayNameToday]}>{day.dayName}</Text>
+          <View style={[styles.dayCircle, day.isSelected && styles.dayCircleToday]}>
             {day.isToday && isCompletedToday ? (
               <Ionicons name="checkmark-circle-outline" size={20} color={Colors.primary} />
             ) : (
-              <Text style={[styles.dayNum, day.isToday && styles.dayNumToday]}>
-                {day.dayNum}
-              </Text>
+              <Text style={[styles.dayNum, day.isSelected && styles.dayNumToday]}>{day.dayNum}</Text>
             )}
           </View>
-        </View>
+        </TouchableOpacity>
       ))}
     </View>
   );
