@@ -341,6 +341,10 @@ export default function TodayScreen() {
       const createdAt = new Date(t.createdAt);
       const createdKey = Number.isNaN(createdAt.getTime()) ? '' : getDateKey(createdAt);
 
+      if (createdKey && createdKey > selectedKey) {
+        return false;
+      }
+
       if (t.completed && t.completedAt) {
         const completedAt = new Date(t.completedAt);
         const completedKey = Number.isNaN(completedAt.getTime()) ? '' : getDateKey(completedAt);
