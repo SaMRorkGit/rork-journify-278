@@ -38,11 +38,10 @@ export default function AspirationsScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
       const aspiration = state.aspirations.find(a => a.lifeArea === lifeArea);
-      if (aspiration) {
-        router.push(`/aspiration-editor?lifeArea=${lifeArea}&aspirationId=${aspiration.id}`);
-      } else {
-        router.push(`/aspiration-editor?lifeArea=${lifeArea}`);
-      }
+      router.push({
+        pathname: '/aspiration-editor',
+        params: aspiration ? { lifeArea, aspirationId: aspiration.id } : { lifeArea },
+      });
     },
     [router, state.aspirations],
   );
@@ -58,7 +57,6 @@ export default function AspirationsScreen() {
       >
         <View style={styles.headerBlock}>
           <Text style={styles.title}>Life areas</Text>
-          <Text style={styles.subtitle}>Pick an area to write or refine what you want most.</Text>
         </View>
 
         <View style={styles.list}>
@@ -87,20 +85,14 @@ export default function AspirationsScreen() {
                       <View style={styles.savedPill}>
                         <Text style={styles.savedPillText}>Saved</Text>
                       </View>
-                    ) : (
-                      <View style={styles.newPill}>
-                        <Text style={styles.newPillText}>New</Text>
-                      </View>
-                    )}
+                    ) : null}
                   </View>
 
                   {aspiration ? (
                     <Text style={styles.cardText} numberOfLines={2}>
                       {aspiration.description}
                     </Text>
-                  ) : (
-                    <Text style={styles.cardEmptyText}>Tap to add an aspiration</Text>
-                  )}
+                  ) : null}
                 </View>
 
                 <Ionicons name="chevron-forward" size={18} color={Colors.textSecondary} />
