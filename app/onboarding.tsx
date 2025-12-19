@@ -238,7 +238,7 @@ export default function OnboardingScreen() {
     }
     
     updateUserProfile({ onboardingCompleted: true });
-    router.replace('/(tabs)/today');
+    router.replace('/(tabs)/today' as any);
   };
 
   const handleComplete = () => {
@@ -273,7 +273,7 @@ export default function OnboardingScreen() {
     const selectedLifeArea = lifeAreaRanking[0] ?? '';
 
     router.push({
-      pathname: '/goal-setup',
+      pathname: '/goal-setup' as any,
       params: {
         fromOnboarding: 'true',
         startStep: '2',
@@ -462,20 +462,6 @@ export default function OnboardingScreen() {
 
           {step === 'momentum' && (
             <View style={[styles.stepContainer, styles.momentumContainer]} testID="onboarding-momentum">
-              <Animated.View
-                style={[
-                  styles.momentumGlow,
-                  {
-                    opacity: breathAnim.interpolate({ inputRange: [0, 1], outputRange: [0.14, 0.28] }),
-                    transform: [
-                      {
-                        scale: breathAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }),
-                      },
-                    ],
-                  },
-                ]}
-              />
-
               <View style={styles.momentumCard}>
                 <Animated.View
                   style={{
@@ -743,7 +729,7 @@ export default function OnboardingScreen() {
                 style={styles.helperButton}
                 onPress={() => {
                   router.push({
-                    pathname: '/vision-guide',
+                    pathname: '/vision-guide' as any,
                     params: {
                       name: name || state.userProfile?.name || 'You',
                     },
@@ -1173,8 +1159,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: 18,
     padding: 18,
-    borderWidth: 1,
-    borderColor: Colors.border,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 18,
