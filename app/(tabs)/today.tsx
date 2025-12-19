@@ -214,18 +214,27 @@ const getHabitFrequencyForDay = (habit: Habit, dayOfWeek: number): boolean => {
 };
 
 
-const getHabitCreatedDateKey = (habit: Habit): string => {
-  const createdAt = new Date(habit.createdAt);
-  if (Number.isNaN(createdAt.getTime())) return '1970-01-01';
+const getHabitCreatedDateKey = (habit: Habit, fallbackKey: string): string => {
+  const createdAtRaw = habit.createdAt;
+  const createdAt = new Date(createdAtRaw);
+  if (!createdAtRaw || Number.isNaN(createdAt.getTime())) {
+    console.log('[Today] Habit has invalid createdAt; using fallback key to avoid leaking into past days', {
+      habitId: habit.id,
+      createdAt: createdAtRaw,
+      fallbackKey,
+    });
+    return fallbackKey;
+  }
   return getDateKey(createdAt);
 };
 
 const findMostRecentMissedHabitDate = (
   habit: Habit,
   selectedDate: Date,
-  lookbackDays: number
+  lookbackDays: number,
+  fallbackCreatedKey: string
 ): string | undefined => {
-  const createdKey = getHabitCreatedDateKey(habit);
+  const createdKey = getHabitCreatedDateKey(habit, fallbackCreatedKey);
 
   for (let offset = 1; offset <= lookbackDays; offset += 1) {
     const checkDate = new Date(selectedDate);
@@ -254,7 +263,8 @@ const buildCarryForwardHabits = (
   allHabits: Habit[],
   selectedDate: Date,
   selectedDateKey: string,
-  scheduledTodayIds: Set<string>
+  scheduledTodayIds: Set<string>,
+  fallbackCreatedKey: string
 ): HabitWithComputed[] => {
   const lookbackDays = 14;
   const carried: HabitWithComputed[] = [];
@@ -264,7 +274,7 @@ const buildCarryForwardHabits = (
       return;
     }
 
-    const missedKey = findMostRecentMissedHabitDate(habit, selectedDate, lookbackDays);
+    const missedKey = findMostRecentMissedHabitDate(habit, selectedDate, lookbackDays, fallbackCreatedKey);
     if (!missedKey) {
       return;
     }
@@ -390,7 +400,7 @@ export default function TodayScreen() {
   const habits = useMemo((): HabitWithComputed[] => {
     const scheduledHabits: HabitWithComputed[] = state.habits
       .filter(habit => {
-        const createdKey = getHabitCreatedDateKey(habit);
+        const createdKey = getHabitCreatedDateKey(habit, todayKey);
         if (createdKey > selectedDateKey) {
           return false;
         }
@@ -408,10 +418,10 @@ export default function TodayScreen() {
 
     const scheduledIds = new Set<string>(scheduledHabits.map(h => h.id));
 
-    const carried = buildCarryForwardHabits(state.habits, selectedDate, selectedDateKey, scheduledIds);
+    const carried = buildCarryForwardHabits(state.habits, selectedDate, selectedDateKey, scheduledIds, todayKey);
 
     return [...scheduledHabits, ...carried];
-  }, [selectedDate, selectedDateKey, selectedDayOfWeek, state.habits]);
+  }, [selectedDate, selectedDateKey, selectedDayOfWeek, state.habits, todayKey]);
 
   const [newTodoTitle, setNewTodoTitle] = useState('');
   const checkInTimeOfDay: CheckInType = getCheckInTimeOfDay(isViewingToday ? new Date() : selectedDate);
