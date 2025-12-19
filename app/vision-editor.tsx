@@ -1,4 +1,4 @@
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, Alert } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
@@ -10,6 +10,7 @@ import type { Vision } from '../types';
 
 export default function VisionEditorScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const { state, updateVision } = useAppState();
   const [visionText, setVisionText] = useState<string>(state.vision?.text || '');
@@ -32,13 +33,21 @@ export default function VisionEditorScreen() {
     };
 
     updateVision(vision);
-    
+
+    const returnTo = typeof params?.returnTo === 'string' && params.returnTo.length > 0 ? params.returnTo : undefined;
+    console.log('[VisionEditor] Save complete, navigating', { canGoBack: router.canGoBack(), returnTo });
+
+    if (returnTo) {
+      router.replace(returnTo as any);
+      return;
+    }
+
     if (router.canGoBack()) {
       router.back();
     } else {
       router.replace('/(tabs)/profile');
     }
-  }, [visionText, state.vision, updateVision, router]);
+  }, [params?.returnTo, router, state.vision, updateVision, visionText]);
 
   return (
     <>

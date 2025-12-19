@@ -1168,6 +1168,11 @@ function WeekPreview({
   );
 }
 
+type NorthStarQueryResult =
+  | { kind: 'ok'; text: string }
+  | { kind: 'incomplete' }
+  | { kind: 'technical' };
+
 const VISION_PROMPT = `You are Journify’s Vision Essence Generator.
 
 Your job is to create a single short sentence that captures the essence of what the user wants in their life and who they want to become.
@@ -1218,6 +1223,7 @@ growing
 moving toward`;
 
 function VisionEssenceCard({ state }: { state: AppState }) {
+  const router = useRouter();
   const activeGoals = useMemo(
     () => state.goals.filter(goal => !goal.completedAt && goal.status !== 'archived'),
     [state.goals]
@@ -1232,10 +1238,13 @@ function VisionEssenceCard({ state }: { state: AppState }) {
   }, [activeGoals, focusGoal]);
   const lifeAreas = useMemo(() => state.userProfile?.lifeAreaRanking ?? [], [state.userProfile?.lifeAreaRanking]);
   const interests = useMemo(() => state.userProfile?.interests ?? [], [state.userProfile?.interests]);
-  const visionText = state.vision?.text?.trim();
+  const visionText = state.vision?.text?.trim() ?? '';
+  const visionWordCount = useMemo(() => (visionText ? visionText.split(/\s+/).filter(Boolean).length : 0), [visionText]);
+
+  const hasVision = visionText.length > 0;
 
   const hasInputs = Boolean(
-    (visionText && visionText.length > 0) ||
+    hasVision ||
     prioritizedGoals.length > 0 ||
     lifeAreas.length > 0 ||
     interests.length > 0
@@ -1277,57 +1286,99 @@ function VisionEssenceCard({ state }: { state: AppState }) {
     interests,
   }), [visionText, prioritizedGoals, lifeAreas, interests]);
 
-  const { data, isFetching, isRefetching, isError } = useQuery({
+  const { data, isFetching, isRefetching } = useQuery({
     queryKey: ['vision-essence', queryKeyPayload, contextDetails],
-    queryFn: async () => {
+    queryFn: async (): Promise<NorthStarQueryResult> => {
       console.log('[VisionEssenceCard] Generating new vision essence');
-      const response = await generateText({
-        messages: [
-          {
-            role: 'user',
-            content: `${VISION_PROMPT}\n\nUser data:\n${contextDetails}`,
-          },
-        ],
-        temperature: 0.65,
-        topP: 0.85,
-        frequencyPenalty: 0.25,
-        presencePenalty: 0.2,
-      });
-      const cleaned = response.replace(/^["'\s]+|["'\s]+$/g, '').replace(/\s+/g, ' ').trim();
-      if (!cleaned) {
-        throw new Error('Empty response from generator');
+      try {
+        const response = await generateText({
+          messages: [
+            {
+              role: 'user',
+              content: `${VISION_PROMPT}\n\nUser data:\n${contextDetails}`,
+            },
+          ],
+          temperature: 0.65,
+          topP: 0.85,
+          frequencyPenalty: 0.25,
+          presencePenalty: 0.2,
+        });
+
+        const cleaned = response.replace(/^["'\s]+|["'\s]+$/g, '').replace(/\s+/g, ' ').trim();
+        if (!cleaned) {
+          console.warn('[VisionEssenceCard] Empty response from generator');
+          return { kind: 'incomplete' };
+        }
+
+        console.log('[VisionEssenceCard] Vision essence ready');
+        return { kind: 'ok', text: cleaned };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('[VisionEssenceCard] Generator error', { message });
+
+        const lower = message.toLowerCase();
+        const looksTechnical =
+          lower.includes('network') ||
+          lower.includes('failed to fetch') ||
+          lower.includes('timeout') ||
+          lower.includes('tempor') ||
+          lower.includes('502') ||
+          lower.includes('503') ||
+          lower.includes('504');
+
+        return looksTechnical ? { kind: 'technical' } : { kind: 'incomplete' };
       }
-      console.log('[VisionEssenceCard] Vision essence ready');
-      return cleaned;
     },
-    enabled: hasInputs,
+    enabled: hasVision && visionWordCount >= 8 && hasInputs,
     staleTime: 1000 * 60 * 30,
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
   });
 
-  if (!hasInputs) {
-    return null;
-  }
+  const handleOpenVisionEditor = useCallback(() => {
+    console.log('[VisionEssenceCard] Opening vision editor from Today');
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    router.push({ pathname: '/vision-editor' as any, params: { returnTo: '/(tabs)/today' } });
+  }, [router]);
 
-  const showSpinner = !data && (isFetching || isRefetching);
+  const showSpinner = hasVision && visionWordCount >= 8 && !data && (isFetching || isRefetching);
+
+  const fallbackText = !hasVision
+    ? 'Create your vision statement to view your north star.'
+    : visionWordCount < 8
+      ? 'Refine your vision statement to generate a north star.'
+      : data?.kind === 'technical'
+        ? 'Unable to generate north star statement, something is wrong on our end.'
+        : data?.kind === 'incomplete'
+          ? 'Refine your vision statement to generate a north star.'
+          : undefined;
+
+  const displayText = data?.kind === 'ok' ? data.text : fallbackText;
 
   return (
     <View>
       <Text style={styles.checkInTitleOutside}>YOUR NORTH STAR</Text>
-      <View style={styles.visionCard} testID="vision-essence-card">
+      <TouchableOpacity
+        onPress={handleOpenVisionEditor}
+        activeOpacity={0.9}
+        style={styles.visionCard}
+        testID="north-star-card"
+      >
         <View style={styles.visionCardBody}>
-          {showSpinner && (
+          {showSpinner ? (
             <ActivityIndicator size="small" color={Colors.tealSoft} />
-          )}
-          {!showSpinner && data && (
-            <Text style={styles.visionCardText} testID="vision-essence-text">{data}</Text>
-          )}
-          {!showSpinner && isError && (
-            <Text style={styles.visionCardErrorText}>Unable to load right now.</Text>
+          ) : (
+            <Text
+              style={data?.kind === 'ok' ? styles.visionCardText : styles.visionCardErrorText}
+              testID={data?.kind === 'ok' ? 'north-star-text' : 'north-star-empty-text'}
+            >
+              {displayText}
+            </Text>
           )}
         </View>
-      </View>
+      </TouchableOpacity>
     </View>
   );
 }
