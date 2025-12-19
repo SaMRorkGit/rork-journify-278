@@ -165,13 +165,13 @@ export default function TodayScreen() {
   const handleTaskEdit = (id: string, isGoalTask: boolean) => {
     const type = isGoalTask ? 'goal' : 'todo';
     router.push({
-      pathname: '/task-edit',
+      pathname: '/task-edit' as any,
       params: { id, type },
     });
   };
 
   const handleEditHabit = (habitId: string) => {
-    router.push(`/habit-edit?id=${habitId}`);
+    router.push({ pathname: '/habit-edit' as any, params: { id: habitId } });
   };
 
   const getTodayCheckIns = () => {
@@ -571,15 +571,6 @@ export default function TodayScreen() {
           })()}
         </View>
 
-        <View style={styles.microCopyCard} testID="daily-quote-card">
-          <View style={styles.microCopyRow}>
-            <View style={styles.microCopyIconWrap}>
-              <Quote size={18} color={Colors.textSecondary} />
-            </View>
-            <Text style={styles.microCopyText} testID="daily-quote-text">{microCopyText}</Text>
-          </View>
-        </View>
-
         <Text style={styles.todaysActionsTitle}>TODAY’S ACTIONS</Text>
         <View style={styles.actionsCard}>
           {(() => {
@@ -712,6 +703,15 @@ export default function TodayScreen() {
               </>
             );
           })()}
+        </View>
+
+        <View style={styles.microCopyCard} testID="daily-quote-card">
+          <View style={styles.microCopyRow}>
+            <View style={styles.microCopyIconWrap}>
+              <Quote size={18} color={Colors.textSecondary} />
+            </View>
+            <Text style={styles.microCopyText} testID="daily-quote-text">{microCopyText}</Text>
+          </View>
         </View>
 
         <View style={styles.bottomSpacer} />
