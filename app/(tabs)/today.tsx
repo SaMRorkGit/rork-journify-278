@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Award, ChevronDown, ChevronRight, Plus, Quote } from 'lucide-react-native';
+import { Award, ChevronDown, ChevronRight, Plus, Quote, Sparkles } from 'lucide-react-native';
 import {
   View,
   Text,
@@ -119,6 +119,40 @@ Focus on: honest reflection, celebrate what happened, calm closure Examples:
 - "What are you taking from today into tomorrow?"
 - “How was your energy today?”`;
 
+const DAILY_SUMMARY_PROMPT = `You are Journify’s Daily Summary Assistant.
+
+Your task is to generate a short, gentle summary of the user’s day using all available information, including:
+• Mood check-in(s)
+• Daily check-in responses
+• Journal reflections
+• Actions taken (tasks and habits)
+• Any extracted themes, emotions, or wins
+
+The summary should help the user feel seen, encouraged, and grounded.
+
+STRUCTURE YOUR RESPONSE IN TWO SENTENCES:
+
+1. First sentence:
+   - Summarize how the day went overall.
+   - Reflect the general emotional tone or experience of the day.
+   - Use warm, non-judgmental language.
+   - Do not mention specific times or actions in detail.
+
+2. Second sentence:
+   - Gently connect the user’s actions, reflections, or mindset to their goals, vision, or the person they are becoming.
+   - Emphasize small steps, effort, or awareness.
+   - Frame progress in an identity-based way (e.g., becoming calmer, more intentional, more caring, more consistent).
+   - If few actions were taken, normalize this gently and still highlight emotional honesty or awareness as meaningful.
+
+IMPORTANT GUIDELINES:
+• Never mention what the user did not do.
+• Never use guilt-inducing or evaluative language.
+• Never give advice or instructions.
+• Do not use numbers, percentages, or streaks.
+• Keep the tone calm, supportive, and encouraging.
+• Keep the response to exactly 2 sentences.
+• Focus on effort, awareness, and direction — not performance.`;
+
 const getCheckInTimeOfDay = (now: Date = new Date()): CheckInType => {
   const hour = now.getHours();
   if (hour >= 4 && hour <= 11) return 'morning';
@@ -184,6 +218,7 @@ export default function TodayScreen() {
   const router = useRouter();
 
   const currentWeekStart = useMemo(() => getWeekStartMonday(new Date()), []);
+  const todayKey = useMemo(() => getDateKey(new Date()), []);
 
   const selectedDate = useMemo(() => {
     const parsed = parseDateParam(params?.date);
@@ -362,6 +397,113 @@ export default function TodayScreen() {
   });
 
   const checkInPlaceholder = "Write a few words for future you…";
+
+  const isPastDay = useMemo(() => selectedDateKey < todayKey, [selectedDateKey, todayKey]);
+
+  const dailySummaryPayload = useMemo(() => {
+    const dayCheckIns = state.dailyCheckIns
+      .filter(c => c.date === selectedDateKey)
+      .map(c => ({
+        type: c.type,
+        mood: c.mood,
+        reflection: c.reflection ?? '',
+      }));
+
+    const dayJournalEntries = state.journalEntries
+      .filter(entry => {
+        const createdAt = entry.createdAt;
+        if (!createdAt) return false;
+        const parsed = new Date(createdAt);
+        if (Number.isNaN(parsed.getTime())) return false;
+        return getDateKey(parsed) === selectedDateKey;
+      })
+      .map(entry => ({
+        mood: entry.mood ?? null,
+        content: entry.content,
+      }));
+
+    const dayHabits = state.habits
+      .filter(h => h.completedDates.includes(selectedDateKey))
+      .map(h => h.title);
+
+    const dayTodos = state.todos
+      .filter(t => {
+        const completedAt = t.completedAt;
+        if (!t.completed || !completedAt) return false;
+        const parsed = new Date(completedAt);
+        if (Number.isNaN(parsed.getTime())) return false;
+        return getDateKey(parsed) === selectedDateKey;
+      })
+      .map(t => t.title);
+
+    const dayGoalTasks = state.goalTasks
+      .filter(t => {
+        const completedAt = t.completedAt;
+        if (!t.completed || !completedAt) return false;
+        const parsed = new Date(completedAt);
+        if (Number.isNaN(parsed.getTime())) return false;
+        return getDateKey(parsed) === selectedDateKey;
+      })
+      .map(t => t.title);
+
+    const dayGoalsContext = state.goals
+      .filter(g => g.status !== 'archived')
+      .slice(0, 4)
+      .map(g => ({ title: g.title, why: g.why ?? '' }));
+
+    return {
+      dateKey: selectedDateKey,
+      checkIns: dayCheckIns,
+      journalEntries: dayJournalEntries,
+      completedHabits: dayHabits,
+      completedTodos: dayTodos,
+      completedGoalTasks: dayGoalTasks,
+      vision: state.vision?.text ?? '',
+      goals: dayGoalsContext,
+    };
+  }, [selectedDateKey, state.dailyCheckIns, state.goalTasks, state.goals, state.habits, state.journalEntries, state.todos, state.vision?.text]);
+
+  const { data: dailySummary, isFetching: isDailySummaryFetching, isError: isDailySummaryError } = useQuery({
+    queryKey: ['daily-summary', selectedDateKey, dailySummaryPayload],
+    queryFn: async () => {
+      console.log('[DailySummary] Generating daily summary', { selectedDateKey, hasVision: Boolean(dailySummaryPayload.vision) });
+
+      const payloadText = JSON.stringify(dailySummaryPayload, null, 2);
+
+      const response = await generateText({
+        messages: [
+          {
+            role: 'user',
+            content: `${DAILY_SUMMARY_PROMPT}\n\nDay context (JSON):\n${payloadText}`,
+          },
+        ],
+        temperature: 0.55,
+        topP: 0.9,
+        frequencyPenalty: 0.2,
+        presencePenalty: 0.1,
+      });
+
+      const cleaned = response.replace(/^['"\s]+|['"\s]+$/g, '').replace(/\s+/g, ' ').trim();
+      if (!cleaned) {
+        throw new Error('Empty daily summary response');
+      }
+
+      const sentenceParts = cleaned
+        .split(/(?<=[.!?])\s+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      const finalText = sentenceParts.slice(0, 2).join(' ').trim();
+
+      console.log('[DailySummary] Summary ready', { sentenceCount: sentenceParts.length });
+      return finalText;
+    },
+    enabled: isPastDay,
+    staleTime: 1000 * 60 * 60 * 24 * 14,
+    gcTime: 1000 * 60 * 60 * 24 * 21,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+  });
 
   const todayDateKey = useMemo(() => selectedDateKey, [selectedDateKey]);
 
@@ -677,6 +819,34 @@ export default function TodayScreen() {
             router.setParams({ date: dateKey } as any);
           }}
         />
+
+        {isPastDay && (
+          <View style={styles.dailySummaryWrap} testID="daily-summary-wrap">
+            <Text style={styles.checkInTitleOutside}>SUMMARY</Text>
+            <View style={styles.dailySummaryCard} testID="daily-summary-card">
+              <View style={styles.dailySummaryHeader}>
+                <View style={styles.dailySummaryIconWrap}>
+                  <Sparkles size={16} color={Colors.tealSoft} />
+                </View>
+                <Text style={styles.dailySummaryDate} testID="daily-summary-date">{selectedDateHeaderText}</Text>
+              </View>
+
+              {isDailySummaryFetching && !dailySummary ? (
+                <View style={styles.dailySummaryLoading} testID="daily-summary-loading">
+                  <ActivityIndicator size="small" color={Colors.tealSoft} />
+                  <Text style={styles.dailySummaryLoadingText}>Pulling your day together…</Text>
+                </View>
+              ) : (
+                <Text style={styles.dailySummaryText} testID="daily-summary-text">
+                  {dailySummary ??
+                    (isDailySummaryError
+                      ? 'Today held a real mix of moments, and you showed up with honesty. Even noticing your experience is part of who you’re becoming.'
+                      : '…')}
+                </Text>
+              )}
+            </View>
+          </View>
+        )}
 
         <VisionEssenceCard state={state} />
 
@@ -1457,6 +1627,56 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingVertical: 24,
     paddingHorizontal: 18,
+  },
+  dailySummaryWrap: {
+    marginBottom: 6,
+  },
+  dailySummaryCard: {
+    marginHorizontal: 14,
+    marginBottom: 16,
+    backgroundColor: 'rgba(8, 32, 41, 0.9)',
+    borderRadius: 22,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  dailySummaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  dailySummaryIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(107, 230, 218, 0.14)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dailySummaryDate: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  dailySummaryLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 6,
+  },
+  dailySummaryLoadingText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  dailySummaryText: {
+    fontSize: 15,
+    color: Colors.text,
+    lineHeight: 22,
+    fontWeight: '500',
   },
   microCopyRow: {
     flexDirection: 'row',
