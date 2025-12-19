@@ -507,7 +507,13 @@ export default function TodayScreen() {
 
   const todaysThoughts = useMemo(() => {
     const journalThoughts: TodayThoughtItem[] = state.journalEntries
-      .filter(entry => (entry.createdAt?.split('T')[0] ?? '') === selectedDateKey)
+      .filter(entry => {
+        const createdAt = entry.createdAt;
+        if (!createdAt) return false;
+        const parsed = new Date(createdAt);
+        if (Number.isNaN(parsed.getTime())) return false;
+        return getDateKey(parsed) === selectedDateKey;
+      })
       .map(entry => ({
         id: `journal-${entry.id}`,
         createdAt: entry.createdAt,
