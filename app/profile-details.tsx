@@ -64,6 +64,7 @@ export default function ProfileDetailsScreen() {
   const [editInterests, setEditInterests] = useState<string[]>(profile?.interests || []);
   const [editIdentityTags, setEditIdentityTags] = useState<string[]>(profile?.identityTags || []);
   const [customInterest, setCustomInterest] = useState('');
+  const [customIdentity, setCustomIdentity] = useState('');
 
   const [ageGroupSelectOpen, setAgeGroupSelectOpen] = useState(false);
   const [genderSelectOpen, setGenderSelectOpen] = useState(false);
@@ -85,6 +86,7 @@ export default function ProfileDetailsScreen() {
     setEditInterests(profile?.interests || []);
     setEditIdentityTags(profile?.identityTags || []);
     setCustomInterest('');
+    setCustomIdentity('');
     setIsEditing(false);
   };
 
@@ -111,7 +113,15 @@ export default function ProfileDetailsScreen() {
   };
 
   const toggleIdentityTag = useCallback((tag: string) => {
-    setEditIdentityTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+    setEditIdentityTags((prev) => {
+      if (prev.includes(tag)) {
+        return prev.filter((t) => t !== tag);
+      }
+      if (prev.length >= 3) {
+        return prev;
+      }
+      return [...prev, tag];
+    });
   }, []);
 
   const identityOptionsTextToEmoji = useMemo(() => {
@@ -129,6 +139,14 @@ export default function ProfileDetailsScreen() {
     if (customInterest.trim() && !editInterests.includes(customInterest.trim())) {
       setEditInterests(prev => [...prev, customInterest.trim()]);
       setCustomInterest('');
+    }
+  };
+
+  const addCustomIdentity = () => {
+    const trimmed = customIdentity.trim();
+    if (trimmed && !editIdentityTags.includes(trimmed) && editIdentityTags.length < 3) {
+      setEditIdentityTags((prev) => [...prev, trimmed]);
+      setCustomIdentity('');
     }
   };
 
@@ -392,6 +410,27 @@ export default function ProfileDetailsScreen() {
                 })}
               </View>
 
+              <View style={styles.customInputContainer}>
+                <TextInput
+                  style={styles.customInput}
+                  placeholder={editIdentityTags.length >= 3 ? 'Max 3 identities selected' : 'Add your own...'}
+                  placeholderTextColor={Colors.textSecondary}
+                  value={customIdentity}
+                  onChangeText={setCustomIdentity}
+                  onSubmitEditing={addCustomIdentity}
+                  editable={editIdentityTags.length < 3}
+                  testID="profileDetailsCustomIdentityInput"
+                />
+                <TouchableOpacity
+                  style={[styles.addButton, editIdentityTags.length >= 3 && { opacity: 0.5 }]}
+                  onPress={addCustomIdentity}
+                  disabled={editIdentityTags.length >= 3}
+                  testID="profileDetailsCustomIdentityAdd"
+                >
+                  <Text style={styles.addButtonText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+
               {identityUnknownTags.length > 0 && (
                 <View style={[styles.chipContainer, { marginTop: 12 }]} testID="profileDetailsIdentityUnknownTags">
                   {identityUnknownTags.map((tag) => (
@@ -408,6 +447,10 @@ export default function ProfileDetailsScreen() {
                   ))}
                 </View>
               )}
+
+              <Text style={[styles.subtitleHint, { marginTop: 12 }]} testID="profileDetailsIdentityCount">
+                {editIdentityTags.length}/3 selected
+              </Text>
             </>
           ) : profile?.identityTags && profile.identityTags.length > 0 ? (
             <View style={styles.chipContainer} testID="profileDetailsIdentityList">
@@ -706,5 +749,10 @@ const styles = StyleSheet.create({
   },
   identityChipTextSelected: {
     color: Colors.primary,
+  },
+  subtitleHint: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: '500' as const,
   },
 });
