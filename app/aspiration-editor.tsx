@@ -59,7 +59,7 @@ export default function AspirationEditorScreen() {
         options={{ 
           title: screenTitle,
           headerStyle: {
-            backgroundColor: Colors.surface,
+            backgroundColor: Colors.background,
           },
           headerTintColor: Colors.text,
           headerShadowVisible: false,
