@@ -370,22 +370,22 @@ export default function OnboardingScreen() {
           {step === 'momentum' && (
             <View style={styles.stepContainer} testID="onboarding-momentum">
               <View style={styles.momentumCard}>
-                <Text style={styles.momentumText} testID="onboarding-momentum-text">
+                <Text style={styles.momentumParagraph} testID="onboarding-momentum-p1">
                   With <Text style={styles.momentumBrand}>Journify</Text>, we don’t demand perfection.
-                  {'\n'}
-                  {'\n'}
+                </Text>
+                <Text style={styles.momentumParagraph} testID="onboarding-momentum-p2">
                   We celebrate momentum.
                   {'\n'}
                   We applaud progress.
-                  {'\n'}
-                  {'\n'}
+                </Text>
+                <Text style={styles.momentumParagraph} testID="onboarding-momentum-p3">
                   We understand life happens.
                   {'\n'}
                   Miss a day? No guilt.
                   {'\n'}
                   Just: “Ready to try again?”
-                  {'\n'}
-                  {'\n'}
+                </Text>
+                <Text style={[styles.momentumParagraph, styles.momentumParagraphLast]} testID="onboarding-momentum-p4">
                   You’ll set a vision, take small actions, and see how you slowly transform into who you want to be, even on a busy week.
                 </Text>
               </View>
@@ -1001,15 +1001,19 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
   },
-  momentumText: {
-    fontSize: 16,
-    lineHeight: 26,
+  momentumParagraph: {
+    fontSize: 18,
+    lineHeight: 30,
     color: Colors.text,
-    fontWeight: '500' as const,
+    fontWeight: '400' as const,
+    marginBottom: 18,
+  },
+  momentumParagraphLast: {
+    marginBottom: 0,
   },
   momentumBrand: {
     color: Colors.primary,
-    fontWeight: '800' as const,
+    fontWeight: '400' as const,
   },
   identityGrid: {
     flexDirection: 'row' as const,
