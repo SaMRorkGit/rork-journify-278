@@ -1,6 +1,6 @@
 import { Stack, useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Award, ChevronDown, ChevronRight, Plus } from 'lucide-react-native';
+import { Award, ChevronDown, ChevronRight, Plus, Quote } from 'lucide-react-native';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, PanResponder, Animated, ActivityIndicator } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,58 @@ import { generateText } from '@rork-ai/toolkit-sdk';
 import { useAppState, useTodayTodos, useTodayHabits, useTodayGoalTasks } from '../../contexts/AppStateContext';
 import type { Todo, MoodType, DailyCheckIn, CheckInType, AppState } from '../../types';
 import Colors from '../../constants/colors';
+
+const DAILY_QUOTE_PROMPT = `Generate a short, meaningful quote for someone on a personal growth journey.
+
+TONE REQUIREMENTS:
+- Warm and encouraging, not preachy
+- Honest about struggle, not toxic positivity
+- Gentle and compassionate, not aggressive
+- Grounded in reality, not fantasy
+- Personal growth focused, not productivity focused
+- Simple language, not philosophical jargon
+
+STYLE:
+- 1 sentence only
+- Conversational, like advice from a wise friend
+- Can be original or inspired by growth principles
+- Should feel hopeful without being unrealistic
+
+THEMES TO FOCUS ON:
+- Progress over perfection
+- Showing up imperfectly
+- Small steps matter
+- Self-compassion
+- Becoming vs. achieving
+- Momentum over streaks
+- It's okay to struggle
+- Rest is part of growth
+- You're enough as you are
+
+GOOD EXAMPLES:
+✓ "Progress isn't about perfection. It's about showing up, even imperfectly."
+✓ "You don't need to be ready. You just need to start."
+✓ "Small steps still move you forward."
+✓ "Growth happens in the mess, not just the milestones."
+✓ "You're not behind. You're exactly where you need to be."
+✓ "The goal isn't to never fall. It's to keep getting back up."
+✓ "You're becoming someone new, one day at a time."
+
+BAD EXAMPLES:
+✗ "Rise and grind! Winners never quit!"
+✗ "Manifest your dreams! You can achieve anything!"
+✗ "Success is 99% perspiration, 1% inspiration."
+✗ "No pain, no gain. Push through the discomfort."
+✗ "The universe rewards those who hustle hardest."
+
+AVOID:
+- Hustle culture language ("grind", "crush", "dominate")
+- Toxic positivity ("just be happy", "good vibes only")
+- Shame-based motivation ("no excuses", "what's your excuse")
+- Comparison ("be better than yesterday's you")
+- Spiritual/mystical language unless very grounded
+- Corporate speak or LinkedIn inspiration
+- Anything that could trigger shame or inadequacy`;
 
 const CHECK_IN_PROMPT = `You are a compassionate personal growth companion generating a check-in prompt. 
 
@@ -187,6 +239,49 @@ export default function TodayScreen() {
   });
 
   const checkInPlaceholder = "Write a few words for future you…";
+
+  const todayDateKey = useMemo(() => {
+    const raw = new Date().toISOString().split('T')[0];
+    return raw || 'unknown-day';
+  }, []);
+
+  const { data: dailyQuote, isFetching: isDailyQuoteFetching, isError: isDailyQuoteError } = useQuery({
+    queryKey: ['daily-quote', todayDateKey],
+    queryFn: async () => {
+      console.log('[DailyQuote] Generating daily quote', { todayDateKey });
+      const response = await generateText({
+        messages: [
+          {
+            role: 'user',
+            content: `${DAILY_QUOTE_PROMPT}\n\nDay: ${todayDateKey}`,
+          },
+        ],
+        temperature: 0.85,
+        topP: 0.95,
+        frequencyPenalty: 0.35,
+        presencePenalty: 0.25,
+      });
+
+      const cleaned = response.replace(/^['"\s]+|['"\s]+$/g, '').replace(/\s+/g, ' ').trim();
+      if (!cleaned) {
+        throw new Error('Empty daily quote response');
+      }
+
+      return cleaned;
+    },
+    staleTime: 1000 * 60 * 60 * 24,
+    gcTime: 1000 * 60 * 60 * 24,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const microCopyText = useMemo(() => {
+    if (isDailyQuoteFetching && !dailyQuote) return '…';
+    if (dailyQuote) return dailyQuote;
+    if (isDailyQuoteError) return 'Today is a fresh chance for a small win.';
+    return 'Today is a fresh chance for a small win.';
+  }, [dailyQuote, isDailyQuoteError, isDailyQuoteFetching]);
+
 
   const checkInSubtext = useMemo(() => {
     if (isCheckInPromptFetching && !checkInPrompt) return '…';
@@ -476,8 +571,13 @@ export default function TodayScreen() {
           })()}
         </View>
 
-        <View style={styles.microCopyCard}>
-          <Text style={styles.microCopyText}>Today is a fresh chance for a small win.</Text>
+        <View style={styles.microCopyCard} testID="daily-quote-card">
+          <View style={styles.microCopyRow}>
+            <View style={styles.microCopyIconWrap}>
+              <Quote size={18} color={Colors.textSecondary} />
+            </View>
+            <Text style={styles.microCopyText} testID="daily-quote-text">{microCopyText}</Text>
+          </View>
         </View>
 
         <Text style={styles.todaysActionsTitle}>TODAY’S ACTIONS</Text>
@@ -1105,13 +1205,24 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     backgroundColor: Colors.glassBg,
     borderRadius: 20,
-    paddingVertical: 16,
+    paddingVertical: 24,
     paddingHorizontal: 18,
   },
+  microCopyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  microCopyIconWrap: {
+    width: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   microCopyText: {
+    flex: 1,
     fontSize: 14,
     color: Colors.text,
-    textAlign: 'center',
+    textAlign: 'left',
     fontWeight: '500',
     letterSpacing: 0.2,
     lineHeight: 20,
