@@ -28,43 +28,92 @@ type HabitWithComputed = Habit & {
   carriedFromDateKey?: string;
 };
 
-const DAILY_QUOTE_PROMPT = `Generate a short, meaningful daily quote for someone on a personal growth journey.
+const DAILY_QUOTE_PROMPT = `You are Journify’s Quote Curator.
 
-TONE REQUIREMENTS:
-- Warm, gentle, and conversational (like a wise friend)
-- Motivate and encourage without being preachy
-- Honest about struggle; avoid toxic positivity
-- Grounded in reality; avoid fantasy/mystical vibes
-- Personal growth focused, not productivity focused
-- Avoid hustle culture and shame-based motivation
+Your task is to select or generate ONE short personal development quote that fits Journify’s tone and feels fresh, relevant, and non-repetitive.
 
-STYLE:
-- Keep it brief: 1–2 sentences
-- No numbers, streak talk, or performance language
-- Can be original or inspired by growth principles
+The quote should:
+• Be calm, gentle, and reflective
+• Encourage growth without pressure
+• Feel grounded, not motivational or hustle-driven
+• Align with identity, clarity, reflection, or small progress
+• Be suitable for a journaling or self-reflection app
 
-VARIETY:
-- Rotate to a different theme option daily; avoid repeating the same theme day-to-day.
+LENGTH RULES:
+• 6–14 words max
+• One sentence only
+• No emojis
+• No exclamation points
 
-THEME OPTIONS (pick ONE per day):
-- Progress over perfection
-- Small consistent steps
-- Self-compassion
-- Fresh starts
-- Identity and becoming
-- Acknowledging struggle
-- Rest as part of growth
-- Momentum, not streaks
-- Being human, not perfect
-- Trusting the process
-- Motivate and encourage
+VARIATION RULES:
+• Avoid quotes that are too similar in wording or theme to recently shown quotes
+• Rotate across themes such as:
+  - Clarity & awareness
+  - Identity & becoming
+  - Small steps & progress
+  - Gentleness & self-compassion
+  - Reflection & presence
+  - Meaning & purpose
+• If a quote was recently shown, choose a different theme or phrasing
 
-AVOID:
-- Hustle culture language ("grind", "crush", "dominate")
-- Toxic positivity ("good vibes only", "just be happy")
-- Shame or comparison language
-- Corporate/LinkedIn inspiration
-- Anything that could trigger inadequacy`;
+SOURCE RULES:
+• You may use well-known quotes or generate original ones
+• If using a known quote, keep attribution optional and minimal
+• Prefer original, Journify-style phrasing when possible
+
+CONTEXT AWARENESS (if provided):
+• Consider the user’s recent mood, engagement level, or time of day
+• If the user is low on activity, prioritize gentler, reassuring quotes
+• If the user is consistent, prioritize reinforcing identity and quiet progress
+
+DO NOT:
+• Use guilt, urgency, or performance language
+• Mention tasks, habits, streaks, or productivity
+• Repeat phrases like “small steps” too frequently
+
+The output should looks like the following, use them as part of your rotation, DO NOT populate the name of the theme. If there is no author for the quote, just populate the quote:
+
+“Knowing yourself is the beginning of all wisdom.” — Aristotle
+“Until you make the unconscious conscious, it will direct your life.” — Carl Jung
+“The quieter you become, the more you can hear.” — Ram Dass
+“Clarity comes from paying attention.”
+“Your life changes the moment you decide to see yourself clearly.”
+“Becoming yourself is the bravest thing you can do.” — E.E. Cummings
+“Every action you take is a vote for the person you wish to become.” — James Clear
+“You are always becoming something.”
+“Live into the version of you that feels most true.”
+“What you practice, you strengthen.”
+“Small steps, taken consistently, change everything.”
+“Little by little, a little becomes a lot.” — Tanzanian Proverb
+“Progress is built quietly.”
+“You don’t have to do everything. Just do the next right thing.”
+“Consistency beats intensity.”
+“Growth doesn’t require harshness.”
+“Be gentle with yourself; you’re doing the best you can.”
+“Rest is not quitting.”
+“You are allowed to move at your own pace.”
+“Softness is strength.”
+“Reflection turns experience into insight.”
+“The unexamined life is not worth living.”
+“What you notice, you can change.”
+“Awareness is the first step toward change.”
+“Pause long enough to listen to yourself.”
+“A meaningful life is built one intentional day at a time.”
+“What matters most is how you show up.”
+“Live in a way that feels aligned.”
+“Purpose is revealed through attention, not pressure.”
+“Meaning grows where intention goes.”
+“Showing up quietly still counts.”
+“Even a gentle day moves you forward.”
+“Some days are for holding, not pushing.”
+“Nothing is wasted when you’re learning about yourself.”
+“You’re allowed to begin again, gently.”
+“Small steps still shape who you become.”
+“Today is a chance to show up gently.”
+“Clarity grows through attention.”
+“Be where you are.”
+“This moment matters.”
+“You’re becoming, even now.”`;
 
 const CHECK_IN_PROMPT = `You are a compassionate personal growth companion generating a check-in prompt. 
 
@@ -639,15 +688,44 @@ export default function TodayScreen() {
 
   const todayDateKey = useMemo(() => selectedDateKey, [selectedDateKey]);
 
+  const dailyQuoteContext = useMemo(() => {
+    const timeOfDay = getCheckInTimeOfDay(isViewingToday ? new Date() : selectedDate);
+    const recentMood = state.dailyCheckIns.find(c => c.date === selectedDateKey)?.mood ?? 'unknown';
+
+    const totalCount = habits.length + goalTasks.length + todos.length;
+    const completedCount = [...habits, ...goalTasks, ...todos].filter((item: any) =>
+      (typeof item?.completedToday === 'boolean' ? item.completedToday : Boolean(item?.completed))
+    ).length;
+
+    return {
+      date: todayDateKey,
+      timeOfDay,
+      recentMood,
+      completedCount,
+      totalCount,
+    };
+  }, [goalTasks, habits, isViewingToday, selectedDate, selectedDateKey, state.dailyCheckIns, todayDateKey, todos]);
+
   const { data: dailyQuote, isFetching: isDailyQuoteFetching, isError: isDailyQuoteError } = useQuery({
-    queryKey: ['daily-quote', todayDateKey],
+    queryKey: ['daily-quote', todayDateKey, dailyQuoteContext],
     queryFn: async () => {
-      console.log('[DailyQuote] Generating daily quote', { todayDateKey });
+      console.log('[DailyQuote] Generating daily quote', { todayDateKey, dailyQuoteContext });
       const response = await generateText({
         messages: [
           {
             role: 'user',
-            content: `${DAILY_QUOTE_PROMPT}\n\nDay: ${todayDateKey}`,
+            content: `${DAILY_QUOTE_PROMPT}
+
+CONTEXT AWARENESS INPUT (optional):
+- Date: ${dailyQuoteContext.date}
+- Time of day: ${dailyQuoteContext.timeOfDay}
+- Recent mood: ${dailyQuoteContext.recentMood}
+- Engagement level: ${dailyQuoteContext.completedCount}/${dailyQuoteContext.totalCount}
+
+RECENT QUOTES (if any):
+- Unknown (not provided)
+
+Remember: output ONLY the quote, wrapped in “double quotes”, with optional minimal attribution.`,
           },
         ],
         temperature: 0.85,
