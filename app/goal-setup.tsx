@@ -918,6 +918,50 @@ Return ONLY a JSON object:
             <View style={styles.stepContainer}>
               <Text style={styles.stepTitle}>Review Your Goal</Text>
 
+              <TouchableOpacity
+                style={styles.visionPreviewContainer}
+                onPress={() => {
+                  console.log('[goal-setup] review: navigate to vision editor');
+                  router.push('/vision-editor');
+                }}
+                activeOpacity={0.9}
+                testID="goal-setup-review-vision-card"
+              >
+                {(() => {
+                  const theme =
+                    (selectedLifeArea && LIFE_AREA_THEMES[selectedLifeArea as keyof typeof LIFE_AREA_THEMES]) ||
+                    LIFE_AREA_THEMES.health;
+
+                  const visionText = state.vision?.text?.trim();
+
+                  return (
+                    <>
+                      <View
+                        style={[
+                          styles.visionPreviewGlow,
+                          {
+                            backgroundColor: theme.color,
+                            shadowColor: theme.glow,
+                          },
+                        ]}
+                      />
+                      <View style={styles.visionPreviewCard}>
+                        <Text style={styles.visionPreviewLabel}>Vision</Text>
+                        <Text
+                          style={[
+                            styles.visionPreviewText,
+                            !visionText && styles.visionPreviewTextPlaceholder,
+                          ]}
+                        >
+                          {visionText ? visionText : 'Tap to add / edit your vision'}
+                        </Text>
+                        <Text style={styles.visionPreviewHint}>Tap to edit</Text>
+                      </View>
+                    </>
+                  );
+                })()}
+              </TouchableOpacity>
+
               <TouchableOpacity style={styles.reviewCard} onPress={() => handleEditStep(1)}>
                 <Text style={styles.reviewLabel}>Life Area</Text>
                 <Text style={styles.reviewText}>
@@ -1907,5 +1951,57 @@ const styles = StyleSheet.create({
     color: Colors.text,
     lineHeight: 22,
     textAlign: 'center' as const,
+  },
+  visionPreviewContainer: {
+    marginBottom: 18,
+    position: 'relative',
+    borderRadius: 18,
+    alignItems: 'center',
+  },
+  visionPreviewGlow: {
+    position: 'absolute' as const,
+    left: 0,
+    right: 0,
+    top: 8,
+    bottom: 8,
+    borderRadius: 18,
+    opacity: 0.22,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  visionPreviewCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    width: '100%',
+  },
+  visionPreviewLabel: {
+    fontSize: 12,
+    fontWeight: '700' as const,
+    color: Colors.textSecondary,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
+  visionPreviewText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: Colors.text,
+    lineHeight: 22,
+  },
+  visionPreviewTextPlaceholder: {
+    color: Colors.textSecondary,
+    fontWeight: '500' as const,
+  },
+  visionPreviewHint: {
+    marginTop: 10,
+    fontSize: 12,
+    color: Colors.primary,
+    fontWeight: '600' as const,
   },
 });
