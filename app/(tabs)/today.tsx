@@ -148,6 +148,24 @@ const parseDateParam = (value: unknown): Date | null => {
   return parsed;
 };
 
+const getWeekStartMonday = (date: Date): Date => {
+  const base = new Date(date);
+  base.setHours(0, 0, 0, 0);
+  const day = base.getDay();
+  const diffToMonday = (day + 6) % 7;
+  base.setDate(base.getDate() - diffToMonday);
+  return base;
+};
+
+const isDateWithinWeek = (date: Date, weekStart: Date): boolean => {
+  const startKey = getDateKey(weekStart);
+  const end = new Date(weekStart);
+  end.setDate(weekStart.getDate() + 6);
+  const endKey = getDateKey(end);
+  const key = getDateKey(date);
+  return key >= startKey && key <= endKey;
+};
+
 const getHabitFrequencyForDay = (habit: Habit, dayOfWeek: number): boolean => {
   if (habit.frequency === 'daily') return true;
   if (habit.frequency === 'weekly') {
@@ -165,10 +183,23 @@ export default function TodayScreen() {
   const { state, toggleTodo, toggleHabitCompletion, toggleGoalTask, addTodo, calculateXPForLevel, addDailyCheckIn, updateDailyCheckIn } = appState;
   const router = useRouter();
 
+  const currentWeekStart = useMemo(() => getWeekStartMonday(new Date()), []);
+
   const selectedDate = useMemo(() => {
     const parsed = parseDateParam(params?.date);
-    return parsed ?? new Date();
-  }, [params?.date]);
+    const fallback = new Date();
+    if (!parsed) return fallback;
+
+    if (!isDateWithinWeek(parsed, currentWeekStart)) {
+      console.log('[Today] Ignoring out-of-week date param (week navigation disabled)', {
+        paramDate: params?.date,
+        currentWeekStart: getDateKey(currentWeekStart),
+      });
+      return fallback;
+    }
+
+    return parsed;
+  }, [currentWeekStart, params?.date]);
 
   const selectedDateKey = useMemo(() => getDateKey(selectedDate), [selectedDate]);
   const selectedDayOfWeek = useMemo(() => selectedDate.getDay(), [selectedDate]);
@@ -579,6 +610,7 @@ export default function TodayScreen() {
         <WeekPreview
           isCompletedToday={isEverythingCompletedToday()}
           selectedDateKey={selectedDateKey}
+          weekStartDate={currentWeekStart}
           onSelectDateKey={(dateKey) => {
             console.log('[Today] WeekPreview select day', { dateKey });
             router.setParams({ date: dateKey } as any);
@@ -988,25 +1020,17 @@ function ActionCard({
 function WeekPreview({
   isCompletedToday,
   selectedDateKey,
+  weekStartDate,
   onSelectDateKey,
 }: {
   isCompletedToday: boolean;
   selectedDateKey: string;
+  weekStartDate: Date;
   onSelectDateKey: (dateKey: string) => void;
 }) {
-  const selectedDate = useMemo(() => {
-    const parsed = parseDateParam(selectedDateKey);
-    return parsed ?? new Date();
-  }, [selectedDateKey]);
-
   const weekStart = useMemo(() => {
-    const base = new Date(selectedDate);
-    base.setHours(0, 0, 0, 0);
-    const day = base.getDay();
-    const diffToMonday = (day + 6) % 7;
-    base.setDate(base.getDate() - diffToMonday);
-    return base;
-  }, [selectedDate]);
+    return getWeekStartMonday(weekStartDate);
+  }, [weekStartDate]);
 
   const todayKey = useMemo(() => getDateKey(new Date()), []);
 
