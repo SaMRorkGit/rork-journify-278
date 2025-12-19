@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Animated, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Animated, Platform, Easing } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { ChevronRight, X, ChevronLeft, Sparkles, Check } from 'lucide-react-native';
@@ -101,11 +101,12 @@ export default function OnboardingScreen() {
     welcomeParagraphAnims.forEach((a) => a.setValue(0));
 
     Animated.stagger(
-      220,
+      900,
       welcomeParagraphAnims.map((anim) =>
         Animated.timing(anim, {
           toValue: 1,
-          duration: 520,
+          duration: 1800,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         })
       )
@@ -390,7 +391,7 @@ export default function OnboardingScreen() {
                     ],
                   }}
                 >
-                  <Text style={styles.welcomeParagraph} testID="onboarding-welcome-subtext-1">
+                  <Text style={[styles.welcomeParagraph, styles.welcomeParagraphFirst]} testID="onboarding-welcome-subtext-1">
                     This isn’t another productivity app.
                   </Text>
                 </Animated.View>
@@ -408,7 +409,7 @@ export default function OnboardingScreen() {
                     ],
                   }}
                 >
-                  <Text style={styles.welcomeParagraph} testID="onboarding-welcome-subtext-2">
+                  <Text style={[styles.welcomeParagraph, styles.welcomeParagraphSecond]} testID="onboarding-welcome-subtext-2">
                     This is your space to grow gently,
                   </Text>
                 </Animated.View>
@@ -426,7 +427,7 @@ export default function OnboardingScreen() {
                     ],
                   }}
                 >
-                  <Text style={styles.welcomeParagraph} testID="onboarding-welcome-subtext-3">
+                  <Text style={[styles.welcomeParagraph, styles.welcomeParagraphThird]} testID="onboarding-welcome-subtext-3">
                     aligned with the person you want to be.
                   </Text>
                 </Animated.View>
@@ -1053,7 +1054,15 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     color: Colors.textSecondary,
     fontWeight: '500' as const,
+  },
+  welcomeParagraphFirst: {
     marginTop: 18,
+  },
+  welcomeParagraphSecond: {
+    marginTop: 34,
+  },
+  welcomeParagraphThird: {
+    marginTop: 10,
   },
   momentumCard: {
     backgroundColor: Colors.surface,
