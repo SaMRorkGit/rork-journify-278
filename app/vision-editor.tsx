@@ -35,7 +35,7 @@ export default function VisionEditorScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/profile');
+      router.replace('/(tabs)/profile');
     }
   }, [visionText, state.vision, updateVision, router]);
 
@@ -52,7 +52,13 @@ export default function VisionEditorScreen() {
       />
       <ScrollView
         style={styles.container}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: insets.top + 20,
+            paddingBottom: insets.bottom + 40,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >

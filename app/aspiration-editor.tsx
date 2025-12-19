@@ -109,7 +109,7 @@ export default function AspirationEditorScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/profile');
+      router.replace('/(tabs)/profile');
     }
   }, [description, lifeArea, existingAspiration, addAspiration, updateAspiration, router]);
 
@@ -129,7 +129,13 @@ export default function AspirationEditorScreen() {
       />
       <ScrollView
         style={styles.container}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: insets.top + 20,
+            paddingBottom: insets.bottom + 40,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
