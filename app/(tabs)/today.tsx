@@ -126,14 +126,24 @@ const getCheckInTimeOfDay = (now: Date = new Date()): CheckInType => {
   return 'evening';
 };
 
+const pad2 = (value: number): string => String(value).padStart(2, '0');
+
 const getDateKey = (date: Date): string => {
-  const raw = date.toISOString().split('T')[0];
-  return raw || 'unknown-day';
+  const y = date.getFullYear();
+  const m = pad2(date.getMonth() + 1);
+  const d = pad2(date.getDate());
+  return `${y}-${m}-${d}`;
 };
 
 const parseDateParam = (value: unknown): Date | null => {
   if (typeof value !== 'string' || value.trim().length === 0) return null;
-  const parsed = new Date(`${value}T00:00:00.000Z`);
+  const parts = value.split('-');
+  if (parts.length !== 3) return null;
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
+  const parsed = new Date(year, month - 1, day, 0, 0, 0, 0);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed;
 };
@@ -163,6 +173,14 @@ export default function TodayScreen() {
   const selectedDateKey = useMemo(() => getDateKey(selectedDate), [selectedDate]);
   const selectedDayOfWeek = useMemo(() => selectedDate.getDay(), [selectedDate]);
   const isViewingToday = useMemo(() => getDateKey(new Date()) === selectedDateKey, [selectedDateKey]);
+
+  const selectedDateHeaderText = useMemo(() => {
+    return selectedDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
+  }, [selectedDate]);
 
   const todos = useMemo(() => state.todos, [state.todos]);
 
@@ -514,14 +532,18 @@ export default function TodayScreen() {
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
-              <Text style={styles.headerTitle}>Today</Text>
-              <Text style={styles.headerSubtitle}>
-                {selectedDate.toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </Text>
+              {isViewingToday ? (
+                <>
+                  <Text style={styles.headerTitle} testID="today-header-title">Today</Text>
+                  <Text style={styles.headerSubtitle} testID="today-header-subtitle">
+                    {selectedDateHeaderText}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.headerTitle} testID="today-header-selected-date">
+                  {selectedDateHeaderText}
+                </Text>
+              )}
             </View>
             <View style={styles.levelBadgeContainer}>
               <View style={styles.levelBadgeRight}>
