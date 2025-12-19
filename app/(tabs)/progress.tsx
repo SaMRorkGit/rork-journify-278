@@ -211,13 +211,23 @@ ${themeSnapshotSerialized}`;
     [weeklyMetrics]
   );
 
+  const maxMoodCount = useMemo(() => {
+    const counts = moodDisplayOrder.map(item => weeklyMetrics.moodCounts[item.key] ?? 0);
+    return counts.reduce((max, value) => (value > max ? value : max), 0);
+  }, [weeklyMetrics.moodCounts]);
+
   const moodItems = useMemo(
     () =>
-      moodDisplayOrder.map(item => ({
-        ...item,
-        value: weeklyMetrics.moodCounts[item.key] ?? 0,
-      })),
-    [weeklyMetrics.moodCounts]
+      moodDisplayOrder.map(item => {
+        const value = weeklyMetrics.moodCounts[item.key] ?? 0;
+        const ratio = maxMoodCount > 0 ? value / maxMoodCount : 0;
+        return {
+          ...item,
+          value,
+          ratio,
+        };
+      }),
+    [weeklyMetrics.moodCounts, maxMoodCount]
   );
 
   const weeklySummaryText = weeklySummaryContent?.trim() ?? '';
@@ -336,13 +346,28 @@ ${themeSnapshotSerialized}`;
           <View style={styles.moodCard}>
             <Text style={styles.sectionTitle}>Weekly Mood Mix</Text>
             <View style={styles.moodRow}>
-              {moodItems.map(item => (
-                <View key={item.key} style={styles.moodItem} testID={`weekly-mood-${item.key}`}>
-                  <Text style={styles.moodValue}>{item.value}</Text>
-                  <Text style={styles.moodEmoji}>{item.emoji}</Text>
-                  <Text style={styles.moodLabel}>{item.label}</Text>
-                </View>
-              ))}
+              {moodItems.map(item => {
+                const barHeight = Math.max(3, Math.round(styles.moodBarMax.height * item.ratio));
+
+                return (
+                  <View key={item.key} style={styles.moodItem} testID={`weekly-mood-${item.key}`}>
+                    <View style={styles.moodBarMax}>
+                      <View
+                        style={[
+                          styles.moodBar,
+                          {
+                            height: barHeight,
+                            opacity: item.value === 0 ? 0.35 : 1,
+                          },
+                        ]}
+                        testID={`weekly-mood-bar-${item.key}`}
+                      />
+                    </View>
+                    <Text style={styles.moodEmoji}>{item.emoji}</Text>
+                    <Text style={styles.moodLabel}>{item.label}</Text>
+                  </View>
+                );
+              })}
             </View>
           </View>
         )}
@@ -741,10 +766,18 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     gap: 6,
   },
-  moodValue: {
-    fontSize: 26,
-    fontWeight: '700' as const,
-    color: Colors.primary,
+  moodBarMax: {
+    height: 44,
+    width: '100%',
+    alignItems: 'center' as const,
+    justifyContent: 'flex-end' as const,
+    paddingHorizontal: 4,
+  },
+  moodBar: {
+    width: '100%',
+    maxWidth: 32,
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
   },
   moodEmoji: {
     fontSize: 28,
