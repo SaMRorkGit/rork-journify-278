@@ -126,7 +126,7 @@ export default function ReflectionResultsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     router.push({
-      pathname: '/habit-setup',
+      pathname: '/habit-setup' as any,
       params: {
         habitTitle,
         fromReflection: 'true',
@@ -140,7 +140,7 @@ export default function ReflectionResultsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     router.push({
-      pathname: '/goal-setup',
+      pathname: '/goal-setup' as any,
       params: {
         goalTitle,
         fromReflection: 'true',
@@ -151,7 +151,7 @@ export default function ReflectionResultsScreen() {
   const handleDone = useCallback(() => {
     if (!addTodo) {
       console.error('[handleDone] addTodo is not available!');
-      router.replace('/(tabs)/journal');
+      router.replace('/(tabs)/journal' as any);
       return;
     }
 

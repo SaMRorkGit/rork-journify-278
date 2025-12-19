@@ -48,9 +48,9 @@ export default function PlanScreen() {
     }
     
     if (type === 'goal') {
-      router.push('/goal-setup');
+      router.push('/goal-setup' as any);
     } else if (type === 'habit') {
-      router.push('/habit-setup');
+      router.push('/habit-setup' as any);
     } else if (type === 'todo') {
       scrollViewRef.current?.scrollToEnd({ animated: true });
       setTimeout(() => {
@@ -261,7 +261,7 @@ function HabitItemCard({ habit }: { habit: Habit }) {
   return (
     <TouchableOpacity 
       style={styles.planItem}
-      onPress={() => router.push({ pathname: '/habit-edit', params: { id: habit.id } })}
+      onPress={() => router.push({ pathname: '/habit-edit' as any, params: { id: habit.id } })}
       activeOpacity={0.7}
     >
       <Ionicons name="refresh" size={24} color={Colors.accent} />
@@ -430,7 +430,7 @@ function GoalItemCard({ goal }: { goal: Goal }) {
                 <TouchableOpacity 
                   key={habit.id} 
                   style={[styles.taskItem, { alignItems: 'flex-start' }]}
-                  onPress={() => router.push({ pathname: '/habit-edit', params: { id: habit.id } })}
+                  onPress={() => router.push({ pathname: '/habit-edit' as any, params: { id: habit.id } })}
                 >
                   <Ionicons name="refresh" size={16} color={Colors.accent} />
 
@@ -451,7 +451,7 @@ function GoalItemCard({ goal }: { goal: Goal }) {
         <>
           <TouchableOpacity
             style={styles.addActionButton}
-            onPress={() => router.push({ pathname: '/goal-actions', params: { id: goal.id } })}
+            onPress={() => router.push({ pathname: '/goal-actions' as any, params: { id: goal.id } })}
             activeOpacity={0.85}
             testID={`goal-${goal.id}-add-action`}
           >
@@ -462,7 +462,7 @@ function GoalItemCard({ goal }: { goal: Goal }) {
 
           <TouchableOpacity
             style={styles.viewDetailsButton}
-            onPress={() => router.push({ pathname: '/goal-details', params: { id: goal.id } })}
+            onPress={() => router.push({ pathname: '/goal-details' as any, params: { id: goal.id } })}
             activeOpacity={0.85}
             testID={`goal-${goal.id}-view-details`}
           >

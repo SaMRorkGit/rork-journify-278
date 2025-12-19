@@ -396,7 +396,7 @@ export default function VisionGuideScreen() {
 
   const handleMaybeLater = useCallback(() => {
     console.log('[VisionGuide] Maybe later tapped');
-    router.replace('/(tabs)/today');
+    router.replace('/(tabs)/today' as any);
   }, [router]);
 
   const handleAcceptVision = useCallback(() => {

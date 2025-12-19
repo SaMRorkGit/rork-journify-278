@@ -71,7 +71,7 @@ export default function JournalScreen() {
 
         <TouchableOpacity
           style={styles.newThoughtButton}
-          onPress={() => router.push('/journal-compose')}
+          onPress={() => router.push('/journal-compose' as any)}
           testID="add-new-thought-button"
           activeOpacity={0.85}
         >
@@ -157,7 +157,7 @@ export default function JournalScreen() {
                     testID={`journal-entry-${entry.data.id}`}
                     activeOpacity={0.85}
                     onPress={() =>
-                      router.push({ pathname: '/journal-entry/[id]', params: { id: entry.data.id } })
+                      router.push({ pathname: '/journal-entry/[id]' as any, params: { id: entry.data.id } })
                     }
                   >
                     {entryContent}

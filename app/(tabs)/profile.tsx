@@ -17,21 +17,21 @@ export default function ProfileScreen() {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    router.push('/onboarding');
+    router.push('/onboarding' as any);
   };
 
   const handleProfileDetails = () => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    router.push('/profile-details');
+    router.push('/profile-details' as any);
   };
 
   const handleVisionPress = () => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    router.push('/vision-editor');
+    router.push('/vision-editor' as any);
   };
 
   const handleAspirationsMenu = () => {

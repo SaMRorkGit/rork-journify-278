@@ -39,7 +39,7 @@ export default function AspirationsScreen() {
       }
       const aspiration = state.aspirations.find(a => a.lifeArea === lifeArea);
       router.push({
-        pathname: '/aspiration-editor',
+        pathname: '/aspiration-editor' as any,
         params: aspiration ? { lifeArea, aspirationId: aspiration.id } : { lifeArea },
       });
     },

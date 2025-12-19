@@ -523,7 +523,7 @@ Return ONLY a JSON object:
         if (Platform.OS !== 'web') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
-        router.replace('/(tabs)/today');
+        router.replace('/(tabs)/today' as any);
       }, 1500);
     } else {
        if (Platform.OS !== 'web') {
@@ -710,30 +710,22 @@ Return ONLY a JSON object:
 
               {goalTitle.trim().length > 0 ? (
                 <View style={styles.goalPreviewContainer}>
-                  {(() => {
-                    const theme =
-                      (selectedLifeArea && LIFE_AREA_THEMES[selectedLifeArea as keyof typeof LIFE_AREA_THEMES]) ||
-                      LIFE_AREA_THEMES.health;
-
-                    return (
-                      <LinearGradient
-                        colors={[Colors.tealSoft, Colors.tealDeep, Colors.bgDeep]}
-                        start={{ x: 0.08, y: 0.06 }}
-                        end={{ x: 0.9, y: 1 }}
-                        style={styles.goalPreviewCard}
-                      >
-                        <LinearGradient
-                          colors={['rgba(0, 0, 0, 0.0)', 'rgba(0, 0, 0, 0.55)']}
-                          start={{ x: 0.5, y: 0.15 }}
-                          end={{ x: 0.5, y: 1 }}
-                          style={styles.goalPreviewVignette}
-                        />
-                        <View style={styles.goalPreviewInner}>
-                          <Text style={styles.goalPreviewText}>{goalTitle}</Text>
-                        </View>
-                      </LinearGradient>
-                    );
-                  })()}
+                  <LinearGradient
+                    colors={[Colors.tealSoft, Colors.tealDeep, Colors.bgDeep]}
+                    start={{ x: 0.08, y: 0.06 }}
+                    end={{ x: 0.9, y: 1 }}
+                    style={styles.goalPreviewCard}
+                  >
+                    <LinearGradient
+                      colors={['rgba(0, 0, 0, 0.0)', 'rgba(0, 0, 0, 0.55)']}
+                      start={{ x: 0.5, y: 0.15 }}
+                      end={{ x: 0.5, y: 1 }}
+                      style={styles.goalPreviewVignette}
+                    />
+                    <View style={styles.goalPreviewInner}>
+                      <Text style={styles.goalPreviewText}>{goalTitle}</Text>
+                    </View>
+                  </LinearGradient>
                 </View>
               ) : null}
 
@@ -758,30 +750,22 @@ Return ONLY a JSON object:
 
               {goalTitle.trim().length > 0 ? (
                 <View style={styles.goalPreviewContainer}>
-                  {(() => {
-                    const theme =
-                      (selectedLifeArea && LIFE_AREA_THEMES[selectedLifeArea as keyof typeof LIFE_AREA_THEMES]) ||
-                      LIFE_AREA_THEMES.health;
-
-                    return (
-                      <LinearGradient
-                        colors={[Colors.tealSoft, Colors.tealDeep, Colors.bgDeep]}
-                        start={{ x: 0.08, y: 0.06 }}
-                        end={{ x: 0.9, y: 1 }}
-                        style={styles.goalPreviewCard}
-                      >
-                        <LinearGradient
-                          colors={['rgba(0, 0, 0, 0.0)', 'rgba(0, 0, 0, 0.55)']}
-                          start={{ x: 0.5, y: 0.15 }}
-                          end={{ x: 0.5, y: 1 }}
-                          style={styles.goalPreviewVignette}
-                        />
-                        <View style={styles.goalPreviewInner}>
-                          <Text style={styles.goalPreviewText}>{goalTitle}</Text>
-                        </View>
-                      </LinearGradient>
-                    );
-                  })()}
+                  <LinearGradient
+                    colors={[Colors.tealSoft, Colors.tealDeep, Colors.bgDeep]}
+                    start={{ x: 0.08, y: 0.06 }}
+                    end={{ x: 0.9, y: 1 }}
+                    style={styles.goalPreviewCard}
+                  >
+                    <LinearGradient
+                      colors={['rgba(0, 0, 0, 0.0)', 'rgba(0, 0, 0, 0.55)']}
+                      start={{ x: 0.5, y: 0.15 }}
+                      end={{ x: 0.5, y: 1 }}
+                      style={styles.goalPreviewVignette}
+                    />
+                    <View style={styles.goalPreviewInner}>
+                      <Text style={styles.goalPreviewText}>{goalTitle}</Text>
+                    </View>
+                  </LinearGradient>
                 </View>
               ) : null}
 

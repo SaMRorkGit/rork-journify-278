@@ -419,7 +419,7 @@ ${themeSnapshotSerialized}`;
             activeOpacity={0.8}
             onPress={() => {
               console.log('Navigating to weekly planning flow');
-              router.push('/weekly-planning');
+              router.push('/weekly-planning' as any);
             }}
           >
             <Text style={styles.weeklyCardButtonLabel}>Plan Next Week</Text>

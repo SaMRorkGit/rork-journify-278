@@ -35,7 +35,7 @@ export default function VisionEditorScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/profile');
+      router.replace('/profile' as any);
     }
   }, [visionText, state.vision, updateVision, router]);
 

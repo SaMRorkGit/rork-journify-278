@@ -70,7 +70,7 @@ export default function AspirationEditorScreen() {
                 if (router.canGoBack()) {
                   router.back();
                 } else {
-                  router.replace('/(tabs)/profile');
+                  router.replace('/(tabs)/profile' as any);
                 }
               }}
               activeOpacity={0.7}
@@ -117,7 +117,7 @@ export default function AspirationEditorScreen() {
                     key={goal.id}
                     style={styles.rowCard}
                     activeOpacity={0.8}
-                    onPress={() => router.push(`/goal-details?id=${goal.id}`)}
+                    onPress={() => router.push(`/goal-details?id=${goal.id}` as any)}
                     testID={`aspiration-lifearea-goal-${goal.id}`}
                   >
                     <View style={styles.rowCardText}>
@@ -148,7 +148,7 @@ export default function AspirationEditorScreen() {
                     key={habit.id}
                     style={styles.rowCard}
                     activeOpacity={0.8}
-                    onPress={() => router.push(`/habit-edit?id=${habit.id}`)}
+                    onPress={() => router.push(`/habit-edit?id=${habit.id}` as any)}
                     testID={`aspiration-lifearea-habit-${habit.id}`}
                   >
                     <View style={styles.rowCardText}>
