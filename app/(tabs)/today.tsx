@@ -478,7 +478,7 @@ export default function TodayScreen() {
   };
 
   const getMoodEmoji = (mood: MoodType) => {
-    const moodMap = {
+    const moodMap: Record<MoodType, string> = {
       great: '😃',
       fine: '😊',
       neutral: '😐',
@@ -487,6 +487,61 @@ export default function TodayScreen() {
     };
     return moodMap[mood];
   };
+
+  const formatThoughtTime = useCallback((iso: string): string => {
+    const parsed = new Date(iso);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return parsed.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }, []);
+
+  type TodayThoughtItem = {
+    id: string;
+    createdAt: string;
+    mood?: MoodType;
+    text: string;
+    kind: 'journal' | 'checkin';
+  };
+
+  const todaysThoughts = useMemo(() => {
+    const journalThoughts: TodayThoughtItem[] = state.journalEntries
+      .filter(entry => (entry.createdAt?.split('T')[0] ?? '') === selectedDateKey)
+      .map(entry => ({
+        id: `journal-${entry.id}`,
+        createdAt: entry.createdAt,
+        mood: entry.mood,
+        text: entry.content,
+        kind: 'journal',
+      }));
+
+    const checkInThoughts: TodayThoughtItem[] = state.dailyCheckIns
+      .filter(c => c.date === selectedDateKey)
+      .map(c => ({
+        id: `checkin-${c.id}`,
+        createdAt: c.createdAt,
+        mood: c.mood,
+        text: c.reflection ?? '',
+        kind: 'checkin',
+      }));
+
+    const merged = [...journalThoughts, ...checkInThoughts].filter(item => item.text.trim().length > 0);
+    merged.sort((a, b) => {
+      const aTime = new Date(a.createdAt).getTime();
+      const bTime = new Date(b.createdAt).getTime();
+      return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
+    });
+
+    console.log('[Today] Today\'s thoughts computed', {
+      selectedDateKey,
+      journalCount: journalThoughts.length,
+      checkInCount: checkInThoughts.length,
+      total: merged.length,
+    });
+
+    return merged;
+  }, [selectedDateKey, state.dailyCheckIns, state.journalEntries]);
 
   const getSortedActions = (
     habits: HabitWithComputed[],
@@ -849,6 +904,33 @@ export default function TodayScreen() {
             </View>
             <Text style={styles.microCopyText} testID="daily-quote-text">{microCopyText}</Text>
           </View>
+        </View>
+
+        <Text style={styles.todaysThoughtsTitle} testID="todays-thoughts-title">TODAY’S THOUGHTS</Text>
+        <View style={styles.todaysThoughtsCard} testID="todays-thoughts-card">
+          {todaysThoughts.length === 0 ? (
+            <View style={styles.todaysThoughtsEmpty} testID="todays-thoughts-empty">
+              <Text style={styles.todaysThoughtsEmptyText}>No thoughts saved for this day yet.</Text>
+            </View>
+          ) : (
+            todaysThoughts.map((item, index) => {
+              const moodEmoji = item.mood ? getMoodEmoji(item.mood) : '📝';
+              return (
+                <View key={item.id} testID={`todays-thoughts-item-${item.id}`}>
+                  <View style={styles.todaysThoughtsRow}>
+                    <Text style={styles.todaysThoughtsTime} testID={`todays-thoughts-item-time-${item.id}`}>
+                      {formatThoughtTime(item.createdAt)}
+                    </Text>
+                    <Text style={styles.todaysThoughtsEmoji} testID={`todays-thoughts-item-emoji-${item.id}`}>{moodEmoji}</Text>
+                    <Text style={styles.todaysThoughtsText} testID={`todays-thoughts-item-text-${item.id}`}>
+                      {item.text}
+                    </Text>
+                  </View>
+                  {index < todaysThoughts.length - 1 && <View style={styles.todaysThoughtsDivider} />}
+                </View>
+              );
+            })
+          )}
         </View>
 
         <View style={styles.bottomSpacer} />
@@ -1874,5 +1956,60 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  todaysThoughtsTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    paddingHorizontal: 14,
+  },
+  todaysThoughtsCard: {
+    marginHorizontal: 14,
+    marginBottom: 18,
+    backgroundColor: Colors.glassBg,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  todaysThoughtsEmpty: {
+    paddingVertical: 18,
+    alignItems: 'center',
+  },
+  todaysThoughtsEmptyText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  todaysThoughtsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 10,
+  },
+  todaysThoughtsTime: {
+    width: 64,
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  todaysThoughtsEmoji: {
+    width: 28,
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: -1,
+  },
+  todaysThoughtsText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.text,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+  todaysThoughtsDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
 });
