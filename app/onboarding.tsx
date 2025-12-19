@@ -87,6 +87,13 @@ export default function OnboardingScreen() {
     new Animated.Value(0),
   ]).current;
 
+  const momentumParagraphAnims = useRef<Animated.Value[]>([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
+
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -112,6 +119,24 @@ export default function OnboardingScreen() {
       )
     ).start();
   }, [step, welcomeParagraphAnims]);
+
+  useEffect(() => {
+    if (step !== 'momentum') return;
+
+    momentumParagraphAnims.forEach((a) => a.setValue(0));
+
+    Animated.stagger(
+      900,
+      momentumParagraphAnims.map((anim) =>
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 1800,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        })
+      )
+    ).start();
+  }, [step, momentumParagraphAnims]);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -436,26 +461,87 @@ export default function OnboardingScreen() {
           )}
 
           {step === 'momentum' && (
-            <View style={styles.stepContainer} testID="onboarding-momentum">
+            <View style={[styles.stepContainer, styles.momentumContainer]} testID="onboarding-momentum">
+              <Animated.View
+                style={[
+                  styles.momentumGlow,
+                  {
+                    opacity: breathAnim.interpolate({ inputRange: [0, 1], outputRange: [0.14, 0.28] }),
+                    transform: [
+                      {
+                        scale: breathAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+
               <View style={styles.momentumCard}>
-                <Text style={styles.momentumParagraph} testID="onboarding-momentum-p1">
-                  With <Text style={styles.momentumBrand}>Journify</Text>, we don’t demand perfection.
-                </Text>
-                <Text style={styles.momentumParagraph} testID="onboarding-momentum-p2">
-                  We celebrate momentum.
-                  {'\n'}
-                  We applaud progress.
-                </Text>
-                <Text style={styles.momentumParagraph} testID="onboarding-momentum-p3">
-                  We understand life happens.
-                  {'\n'}
-                  Miss a day? No guilt.
-                  {'\n'}
-                  Just: “Ready to try again?”
-                </Text>
-                <Text style={[styles.momentumParagraph, styles.momentumParagraphLast]} testID="onboarding-momentum-p4">
-                  You’ll set a vision, take small actions, and see how you slowly transform into who you want to be, even on a busy week.
-                </Text>
+                <Animated.View
+                  style={{
+                    opacity: momentumParagraphAnims[0],
+                    transform: [
+                      {
+                        translateY: momentumParagraphAnims[0].interpolate({ inputRange: [0, 1], outputRange: [10, 0] }),
+                      },
+                    ],
+                  }}
+                >
+                  <Text style={styles.momentumParagraph} testID="onboarding-momentum-p1">
+                    With <Text style={styles.momentumBrand}>Journify</Text>, we don’t demand perfection.
+                  </Text>
+                </Animated.View>
+
+                <Animated.View
+                  style={{
+                    opacity: momentumParagraphAnims[1],
+                    transform: [
+                      {
+                        translateY: momentumParagraphAnims[1].interpolate({ inputRange: [0, 1], outputRange: [10, 0] }),
+                      },
+                    ],
+                  }}
+                >
+                  <Text style={styles.momentumParagraph} testID="onboarding-momentum-p2">
+                    We celebrate momentum.
+                    {'\n'}
+                    We applaud progress.
+                  </Text>
+                </Animated.View>
+
+                <Animated.View
+                  style={{
+                    opacity: momentumParagraphAnims[2],
+                    transform: [
+                      {
+                        translateY: momentumParagraphAnims[2].interpolate({ inputRange: [0, 1], outputRange: [10, 0] }),
+                      },
+                    ],
+                  }}
+                >
+                  <Text style={styles.momentumParagraph} testID="onboarding-momentum-p3">
+                    We understand life happens.
+                    {'\n'}
+                    Miss a day? No guilt.
+                    {'\n'}
+                    Just: “Ready to try again?”
+                  </Text>
+                </Animated.View>
+
+                <Animated.View
+                  style={{
+                    opacity: momentumParagraphAnims[3],
+                    transform: [
+                      {
+                        translateY: momentumParagraphAnims[3].interpolate({ inputRange: [0, 1], outputRange: [10, 0] }),
+                      },
+                    ],
+                  }}
+                >
+                  <Text style={[styles.momentumParagraph, styles.momentumParagraphLast]} testID="onboarding-momentum-p4">
+                    You’ll set a vision, take small actions, and see how you slowly transform into who you want to be, even on a busy week.
+                  </Text>
+                </Animated.View>
               </View>
             </View>
           )}
@@ -1063,6 +1149,25 @@ const styles = StyleSheet.create({
   },
   welcomeParagraphThird: {
     marginTop: 10,
+  },
+  momentumContainer: {
+    paddingTop: 40,
+    paddingBottom: 24,
+    justifyContent: 'center' as const,
+    minHeight: 420,
+  },
+  momentumGlow: {
+    position: 'absolute' as const,
+    alignSelf: 'center' as const,
+    top: 26,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.26,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 14 },
   },
   momentumCard: {
     backgroundColor: Colors.surface,
