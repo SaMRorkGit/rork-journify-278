@@ -232,14 +232,6 @@ export default function OnboardingScreen() {
     });
   };
 
-  const handleSkip = () => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    
-    updateUserProfile({ onboardingCompleted: true });
-    router.replace('/(tabs)/today' as any);
-  };
 
   const handleComplete = () => {
     const profileData = {
@@ -362,9 +354,7 @@ export default function OnboardingScreen() {
             </TouchableOpacity>
           )}
           {(step === 'welcome' || step === 'momentum' || step === 'name' || step === 'encouragement') && <View style={styles.backButton} />}
-          <TouchableOpacity style={styles.skipButton} onPress={handleSkip} testID="onboarding-skip">
-            <Text style={styles.skipText}>Skip</Text>
-          </TouchableOpacity>
+          <View style={styles.skipButton} />
         </View>
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: `${progress}%` }]} />
