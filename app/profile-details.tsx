@@ -1,14 +1,15 @@
 import { Stack } from 'expo-router';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Edit2, Check, X } from 'lucide-react-native';
+import { ChevronDown, Check, Edit2, X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useAppState } from '../contexts/AppStateContext';
 import Colors from '../constants/colors';
 
 
 const AGE_GROUPS = [
+  { value: '', label: 'Not set' },
   { value: '18-24', label: '18-24' },
   { value: '25-34', label: '25-34' },
   { value: '35-44', label: '35-44' },
@@ -18,10 +19,29 @@ const AGE_GROUPS = [
 ];
 
 const GENDERS = [
+  { value: '', label: 'Not set' },
   { value: 'female', label: 'Female' },
   { value: 'male', label: 'Male' },
   { value: 'non-binary', label: 'Non-binary' },
   { value: 'prefer-not-to-say', label: 'Prefer not to say' },
+];
+
+const IDENTITY_OPTIONS = [
+  { emoji: '🏃', label: 'Runner' },
+  { emoji: '🎨', label: 'Artist / Creative' },
+  { emoji: '👔', label: 'Professional / Leader' },
+  { emoji: '📚', label: 'Learner / Student' },
+  { emoji: '👨‍👩‍👧', label: 'Parent / Caregiver' },
+  { emoji: '🧘', label: 'Mindful person' },
+  { emoji: '🍳', label: 'Foodie / Chef' },
+  { emoji: '💼', label: 'Entrepreneur' },
+  { emoji: '📝', label: 'Writer' },
+  { emoji: '🎵', label: 'Musician' },
+  { emoji: '🌱', label: 'Gardener' },
+  { emoji: '🐕', label: 'Pet parent' },
+  { emoji: '🌍', label: 'Traveler' },
+  { emoji: '💪', label: 'Fitness enthusiast / Athlete' },
+  { emoji: '🧠', label: 'Thinker / Philosopher' },
 ];
 
 const INTEREST_OPTIONS = [
@@ -42,7 +62,11 @@ export default function ProfileDetailsScreen() {
   const [editAgeGroup, setEditAgeGroup] = useState(profile?.ageGroup || '');
   const [editGender, setEditGender] = useState(profile?.gender || '');
   const [editInterests, setEditInterests] = useState<string[]>(profile?.interests || []);
+  const [editIdentityTags, setEditIdentityTags] = useState<string[]>(profile?.identityTags || []);
   const [customInterest, setCustomInterest] = useState('');
+
+  const [ageGroupSelectOpen, setAgeGroupSelectOpen] = useState(false);
+  const [genderSelectOpen, setGenderSelectOpen] = useState(false);
 
   const handleEdit = () => {
     if (Platform.OS !== 'web') {
@@ -59,6 +83,7 @@ export default function ProfileDetailsScreen() {
     setEditAgeGroup(profile?.ageGroup || '');
     setEditGender(profile?.gender || '');
     setEditInterests(profile?.interests || []);
+    setEditIdentityTags(profile?.identityTags || []);
     setCustomInterest('');
     setIsEditing(false);
   };
@@ -67,29 +92,38 @@ export default function ProfileDetailsScreen() {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    
-    if (!editName.trim()) {
-      Alert.alert('Required', 'Please enter your name.');
-      return;
-    }
 
     updateUserProfile({
-      name: editName.trim(),
-      ageGroup: editAgeGroup as any,
-      gender: editGender as any,
+      name: editName.trim() ? editName.trim() : undefined,
+      ageGroup: editAgeGroup ? (editAgeGroup as any) : undefined,
+      gender: editGender ? (editGender as any) : undefined,
       interests: editInterests,
+      identityTags: editIdentityTags.length > 0 ? editIdentityTags : undefined,
     });
-    
+
     setIsEditing(false);
   };
 
   const toggleInterest = (interest: string) => {
-    setEditInterests(prev =>
-      prev.includes(interest)
-        ? prev.filter(i => i !== interest)
-        : [...prev, interest]
+    setEditInterests((prev) =>
+      prev.includes(interest) ? prev.filter((i) => i !== interest) : [...prev, interest]
     );
   };
+
+  const toggleIdentityTag = useCallback((tag: string) => {
+    setEditIdentityTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+  }, []);
+
+  const identityOptionsTextToEmoji = useMemo(() => {
+    const map = new Map<string, string>();
+    IDENTITY_OPTIONS.forEach((o) => map.set(o.label, o.emoji));
+    return map;
+  }, []);
+
+  const identityUnknownTags = useMemo(() => {
+    const known = new Set(IDENTITY_OPTIONS.map((o) => o.label));
+    return editIdentityTags.filter((t) => !known.has(t));
+  }, [editIdentityTags]);
 
   const addCustomInterest = () => {
     if (customInterest.trim() && !editInterests.includes(customInterest.trim())) {
@@ -150,38 +184,104 @@ export default function ProfileDetailsScreen() {
 
               <View style={styles.editField}>
                 <Text style={styles.editLabel}>Age Group</Text>
-                <View style={styles.editOptionsContainer}>
-                  {AGE_GROUPS.map((group) => (
-                    <TouchableOpacity
-                      key={group.value}
-                      style={[styles.editOption, editAgeGroup === group.value && styles.editOptionSelected]}
-                      onPress={() => setEditAgeGroup(group.value)}
-                      testID={`profileDetailsAgeGroupOption-${group.value}`}
-                    >
-                      <Text style={[styles.editOptionText, editAgeGroup === group.value && styles.editOptionTextSelected]}>
-                        {group.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                <TouchableOpacity
+                  style={styles.selectButton}
+                  onPress={() => setAgeGroupSelectOpen(true)}
+                  testID="profileDetailsAgeGroupSelectOpen"
+                >
+                  <Text style={styles.selectButtonText}>
+                    {AGE_GROUPS.find((g) => g.value === editAgeGroup)?.label ?? 'Not set'}
+                  </Text>
+                  <ChevronDown size={18} color={Colors.textSecondary} />
+                </TouchableOpacity>
+
+                <Modal
+                  visible={ageGroupSelectOpen}
+                  transparent
+                  animationType="fade"
+                  onRequestClose={() => setAgeGroupSelectOpen(false)}
+                >
+                  <TouchableOpacity
+                    style={styles.modalBackdrop}
+                    activeOpacity={1}
+                    onPress={() => setAgeGroupSelectOpen(false)}
+                    testID="profileDetailsAgeGroupSelectBackdrop"
+                  >
+                    <View style={styles.modalCard}>
+                      <Text style={styles.modalTitle}>Age Group</Text>
+                      <View style={styles.modalList}>
+                        {AGE_GROUPS.map((group) => {
+                          const selected = editAgeGroup === group.value;
+                          return (
+                            <TouchableOpacity
+                              key={group.value || 'not-set'}
+                              style={[styles.modalRow, selected && styles.modalRowSelected]}
+                              onPress={() => {
+                                setEditAgeGroup(group.value);
+                                setAgeGroupSelectOpen(false);
+                              }}
+                              testID={`profileDetailsAgeGroupOption-${group.value || 'not-set'}`}
+                            >
+                              <Text style={[styles.modalRowText, selected && styles.modalRowTextSelected]}>{group.label}</Text>
+                              {selected ? <Check size={18} color={Colors.primary} /> : <View style={{ width: 18, height: 18 }} />}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </Modal>
               </View>
 
               <View style={styles.editField}>
                 <Text style={styles.editLabel}>Gender</Text>
-                <View style={styles.editOptionsContainer}>
-                  {GENDERS.map((g) => (
-                    <TouchableOpacity
-                      key={g.value}
-                      style={[styles.editOption, editGender === g.value && styles.editOptionSelected]}
-                      onPress={() => setEditGender(g.value)}
-                      testID={`profileDetailsGenderOption-${g.value}`}
-                    >
-                      <Text style={[styles.editOptionText, editGender === g.value && styles.editOptionTextSelected]}>
-                        {g.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                <TouchableOpacity
+                  style={styles.selectButton}
+                  onPress={() => setGenderSelectOpen(true)}
+                  testID="profileDetailsGenderSelectOpen"
+                >
+                  <Text style={styles.selectButtonText}>
+                    {GENDERS.find((g) => g.value === editGender)?.label ?? 'Not set'}
+                  </Text>
+                  <ChevronDown size={18} color={Colors.textSecondary} />
+                </TouchableOpacity>
+
+                <Modal
+                  visible={genderSelectOpen}
+                  transparent
+                  animationType="fade"
+                  onRequestClose={() => setGenderSelectOpen(false)}
+                >
+                  <TouchableOpacity
+                    style={styles.modalBackdrop}
+                    activeOpacity={1}
+                    onPress={() => setGenderSelectOpen(false)}
+                    testID="profileDetailsGenderSelectBackdrop"
+                  >
+                    <View style={styles.modalCard}>
+                      <Text style={styles.modalTitle}>Gender</Text>
+                      <View style={styles.modalList}>
+                        {GENDERS.map((g) => {
+                          const selected = editGender === g.value;
+                          return (
+                            <TouchableOpacity
+                              key={g.value || 'not-set'}
+                              style={[styles.modalRow, selected && styles.modalRowSelected]}
+                              onPress={() => {
+                                setEditGender(g.value);
+                                setGenderSelectOpen(false);
+                              }}
+                              testID={`profileDetailsGenderOption-${g.value || 'not-set'}`}
+                            >
+                              <Text style={[styles.modalRowText, selected && styles.modalRowTextSelected]}>{g.label}</Text>
+                              {selected ? <Check size={18} color={Colors.primary} /> : <View style={{ width: 18, height: 18 }} />}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </Modal>
               </View>
             </>
           ) : (
@@ -272,18 +372,56 @@ export default function ProfileDetailsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Identity tags</Text>
-          {profile?.identityTags && profile.identityTags.length > 0 ? (
-            <View style={styles.chipContainer} testID="profileDetailsIdentityTagsList">
+          <Text style={styles.sectionTitle}>Identity</Text>
+          {isEditing ? (
+            <>
+              <View style={styles.chipContainer} testID="profileDetailsIdentityOptions">
+                {IDENTITY_OPTIONS.map((opt) => {
+                  const selected = editIdentityTags.includes(opt.label);
+                  return (
+                    <TouchableOpacity
+                      key={opt.label}
+                      style={[styles.identityChip, selected && styles.identityChipSelected]}
+                      onPress={() => toggleIdentityTag(opt.label)}
+                      testID={`profileDetailsIdentityOption-${opt.label}`}
+                    >
+                      <Text style={[styles.identityChipEmoji, selected && styles.identityChipEmojiSelected]}>{opt.emoji}</Text>
+                      <Text style={[styles.identityChipText, selected && styles.identityChipTextSelected]}>{opt.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {identityUnknownTags.length > 0 && (
+                <View style={[styles.chipContainer, { marginTop: 12 }]} testID="profileDetailsIdentityUnknownTags">
+                  {identityUnknownTags.map((tag) => (
+                    <View key={tag} style={[styles.chip, styles.chipSelected]}>
+                      <Text style={[styles.chipText, styles.chipTextSelected]}>{tag}</Text>
+                      <TouchableOpacity
+                        onPress={() => toggleIdentityTag(tag)}
+                        style={{ marginLeft: 6 }}
+                        testID={`profileDetailsRemoveUnknownIdentity-${tag}`}
+                      >
+                        <X size={14} color={Colors.surface} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </>
+          ) : profile?.identityTags && profile.identityTags.length > 0 ? (
+            <View style={styles.chipContainer} testID="profileDetailsIdentityList">
               {profile.identityTags.map((tag, index) => (
                 <View key={`${tag}-${index}`} style={styles.chip}>
-                  <Text style={styles.chipText}>{tag}</Text>
+                  <Text style={styles.chipText}>
+                    {(identityOptionsTextToEmoji.get(tag) ? `${identityOptionsTextToEmoji.get(tag)} ` : '') + tag}
+                  </Text>
                 </View>
               ))}
             </View>
           ) : (
-            <View style={styles.infoRow} testID="profileDetailsIdentityTagsEmpty">
-              <Text style={styles.infoLabel}>Identity tags</Text>
+            <View style={styles.infoRow} testID="profileDetailsIdentityEmpty">
+              <Text style={styles.infoLabel}>Identity</Text>
               <Text style={styles.infoValue}>Not set</Text>
             </View>
           )}
@@ -475,5 +613,98 @@ const styles = StyleSheet.create({
     color: Colors.surface,
     fontSize: 14,
     fontWeight: '600' as const,
+  },
+  selectButton: {
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+  },
+  selectButtonText: {
+    fontSize: 15,
+    color: Colors.text,
+    fontWeight: '500' as const,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 18,
+    justifyContent: 'center' as const,
+  },
+  modalCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden' as const,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 10,
+  },
+  modalList: {
+    paddingBottom: 10,
+  },
+  modalRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  modalRowSelected: {
+    backgroundColor: Colors.primary + '10',
+  },
+  modalRowText: {
+    fontSize: 15,
+    color: Colors.text,
+    fontWeight: '500' as const,
+    flex: 1,
+    paddingRight: 12,
+  },
+  modalRowTextSelected: {
+    color: Colors.primary,
+    fontWeight: '700' as const,
+  },
+  identityChip: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 8,
+  },
+  identityChipSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '10',
+  },
+  identityChipEmoji: {
+    fontSize: 14,
+    color: Colors.text,
+  },
+  identityChipEmojiSelected: {
+    color: Colors.text,
+  },
+  identityChipText: {
+    fontSize: 13,
+    color: Colors.text,
+    fontWeight: '600' as const,
+  },
+  identityChipTextSelected: {
+    color: Colors.primary,
   },
 });
