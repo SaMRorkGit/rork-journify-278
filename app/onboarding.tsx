@@ -1003,10 +1003,10 @@ const styles = StyleSheet.create({
   },
   momentumParagraph: {
     fontSize: 18,
-    lineHeight: 30,
+    lineHeight: 26,
     color: Colors.text,
     fontWeight: '400' as const,
-    marginBottom: 18,
+    marginBottom: 26,
   },
   momentumParagraphLast: {
     marginBottom: 0,
