@@ -1539,17 +1539,21 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   visionCardBody: {
-    minHeight: 42,
+    minHeight: 84,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   visionCardText: {
     fontSize: 15,
     lineHeight: 22,
     color: Colors.text,
     fontWeight: '500',
+    textAlign: 'center',
   },
   visionCardErrorText: {
     fontSize: 13,
     color: Colors.textSecondary,
+    textAlign: 'center',
   },
   visionErrorRow: {
     paddingVertical: 4,
