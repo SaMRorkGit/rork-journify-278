@@ -28,57 +28,43 @@ type HabitWithComputed = Habit & {
   carriedFromDateKey?: string;
 };
 
-const DAILY_QUOTE_PROMPT = `Generate a short, meaningful quote for someone on a personal growth journey.
+const DAILY_QUOTE_PROMPT = `Generate a short, meaningful daily quote for someone on a personal growth journey.
 
 TONE REQUIREMENTS:
-- Warm and encouraging, not preachy
-- Honest about struggle, not toxic positivity
-- Gentle and compassionate, not aggressive
-- Grounded in reality, not fantasy
+- Warm, gentle, and conversational (like a wise friend)
+- Motivate and encourage without being preachy
+- Honest about struggle; avoid toxic positivity
+- Grounded in reality; avoid fantasy/mystical vibes
 - Personal growth focused, not productivity focused
-- Simple language, not philosophical jargon
+- Avoid hustle culture and shame-based motivation
 
 STYLE:
-- 1 sentence only
-- Conversational, like advice from a wise friend
+- Keep it brief: 1–2 sentences
+- No numbers, streak talk, or performance language
 - Can be original or inspired by growth principles
-- Should feel hopeful without being unrealistic
 
-THEMES TO FOCUS ON:
+VARIETY:
+- Rotate to a different theme option daily; avoid repeating the same theme day-to-day.
+
+THEME OPTIONS (pick ONE per day):
 - Progress over perfection
-- Showing up imperfectly
-- Small steps matter
+- Small consistent steps
 - Self-compassion
-- Becoming vs. achieving
-- Momentum over streaks
-- It's okay to struggle
-- Rest is part of growth
-- You're enough as you are
-
-GOOD EXAMPLES:
-✓ "Progress isn't about perfection. It's about showing up, even imperfectly."
-✓ "You don't need to be ready. You just need to start."
-✓ "Small steps still move you forward."
-✓ "Growth happens in the mess, not just the milestones."
-✓ "You're not behind. You're exactly where you need to be."
-✓ "The goal isn't to never fall. It's to keep getting back up."
-✓ "You're becoming someone new, one day at a time."
-
-BAD EXAMPLES:
-✗ "Rise and grind! Winners never quit!"
-✗ "Manifest your dreams! You can achieve anything!"
-✗ "Success is 99% perspiration, 1% inspiration."
-✗ "No pain, no gain. Push through the discomfort."
-✗ "The universe rewards those who hustle hardest."
+- Fresh starts
+- Identity and becoming
+- Acknowledging struggle
+- Rest as part of growth
+- Momentum, not streaks
+- Being human, not perfect
+- Trusting the process
+- Motivate and encourage
 
 AVOID:
 - Hustle culture language ("grind", "crush", "dominate")
-- Toxic positivity ("just be happy", "good vibes only")
-- Shame-based motivation ("no excuses", "what's your excuse")
-- Comparison ("be better than yesterday's you")
-- Spiritual/mystical language unless very grounded
-- Corporate speak or LinkedIn inspiration
-- Anything that could trigger shame or inadequacy`;
+- Toxic positivity ("good vibes only", "just be happy")
+- Shame or comparison language
+- Corporate/LinkedIn inspiration
+- Anything that could trigger inadequacy`;
 
 const CHECK_IN_PROMPT = `You are a compassionate personal growth companion generating a check-in prompt. 
 
