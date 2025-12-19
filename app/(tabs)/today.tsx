@@ -22,7 +22,11 @@ import { useAppState } from '../../contexts/AppStateContext';
 import type { Todo, MoodType, DailyCheckIn, CheckInType, AppState, Habit } from '../../types';
 import Colors from '../../constants/colors';
 
-type HabitWithComputed = Habit & { completedToday: boolean; todayValue?: number };
+type HabitWithComputed = Habit & {
+  completedToday: boolean;
+  todayValue?: number;
+  carriedFromDateKey?: string;
+};
 
 const DAILY_QUOTE_PROMPT = `Generate a short, meaningful quote for someone on a personal growth journey.
 
@@ -209,6 +213,83 @@ const getHabitFrequencyForDay = (habit: Habit, dayOfWeek: number): boolean => {
   return false;
 };
 
+
+const getHabitCreatedDateKey = (habit: Habit): string => {
+  const createdAt = new Date(habit.createdAt);
+  if (Number.isNaN(createdAt.getTime())) return '1970-01-01';
+  return getDateKey(createdAt);
+};
+
+const findMostRecentMissedHabitDate = (
+  habit: Habit,
+  selectedDate: Date,
+  lookbackDays: number
+): string | undefined => {
+  const createdKey = getHabitCreatedDateKey(habit);
+
+  for (let offset = 1; offset <= lookbackDays; offset += 1) {
+    const checkDate = new Date(selectedDate);
+    checkDate.setDate(selectedDate.getDate() - offset);
+    const checkKey = getDateKey(checkDate);
+
+    if (checkKey < createdKey) {
+      return undefined;
+    }
+
+    const shouldDo = getHabitFrequencyForDay(habit, checkDate.getDay());
+    if (!shouldDo) {
+      continue;
+    }
+
+    const wasCompleted = habit.completedDates.includes(checkKey);
+    if (!wasCompleted) {
+      return checkKey;
+    }
+  }
+
+  return undefined;
+};
+
+const buildCarryForwardHabits = (
+  allHabits: Habit[],
+  selectedDate: Date,
+  selectedDateKey: string,
+  scheduledTodayIds: Set<string>
+): HabitWithComputed[] => {
+  const lookbackDays = 14;
+  const carried: HabitWithComputed[] = [];
+
+  allHabits.forEach(habit => {
+    if (scheduledTodayIds.has(habit.id)) {
+      return;
+    }
+
+    const missedKey = findMostRecentMissedHabitDate(habit, selectedDate, lookbackDays);
+    if (!missedKey) {
+      return;
+    }
+
+    const completedToday = habit.completedDates.includes(selectedDateKey);
+    const todayValue = habit.trackingData?.[selectedDateKey];
+
+    carried.push({
+      ...habit,
+      completedToday,
+      todayValue,
+      carriedFromDateKey: missedKey,
+    });
+  });
+
+  console.log('[Today] Carry-forward habits computed', {
+    selectedDateKey,
+    totalHabits: allHabits.length,
+    scheduledToday: scheduledTodayIds.size,
+    carried: carried.length,
+  });
+
+  return carried;
+};
+
 export default function TodayScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
@@ -257,7 +338,26 @@ export default function TodayScreen() {
     return `${selectedWeekdayText}, ${selectedMonthDayText}`;
   }, [selectedMonthDayText, selectedWeekdayText]);
 
-  const todos = useMemo(() => state.todos, [state.todos]);
+  const todos = useMemo((): Todo[] => {
+    const selectedKey = selectedDateKey;
+
+    return state.todos.filter(t => {
+      const createdAt = new Date(t.createdAt);
+      const createdKey = Number.isNaN(createdAt.getTime()) ? '' : getDateKey(createdAt);
+
+      if (t.completed && t.completedAt) {
+        const completedAt = new Date(t.completedAt);
+        const completedKey = Number.isNaN(completedAt.getTime()) ? '' : getDateKey(completedAt);
+        return completedKey === selectedKey;
+      }
+
+      if (!t.completed) {
+        return createdKey === selectedKey || (createdKey.length > 0 && createdKey < selectedKey);
+      }
+
+      return false;
+    });
+  }, [selectedDateKey, state.todos]);
 
   const goalTasks = useMemo(() => {
     return state.goalTasks.filter(task => {
@@ -267,8 +367,8 @@ export default function TodayScreen() {
     });
   }, [selectedDateKey, state.goalTasks]);
 
-  const habits = useMemo(() => {
-    return state.habits
+  const habits = useMemo((): HabitWithComputed[] => {
+    const scheduledHabits: HabitWithComputed[] = state.habits
       .filter(habit => getHabitFrequencyForDay(habit, selectedDayOfWeek))
       .map(habit => {
         const completedToday = habit.completedDates.includes(selectedDateKey);
@@ -279,7 +379,13 @@ export default function TodayScreen() {
           todayValue,
         };
       });
-  }, [selectedDateKey, selectedDayOfWeek, state.habits]);
+
+    const scheduledIds = new Set<string>(scheduledHabits.map(h => h.id));
+
+    const carried = buildCarryForwardHabits(state.habits, selectedDate, selectedDateKey, scheduledIds);
+
+    return [...scheduledHabits, ...carried];
+  }, [selectedDate, selectedDateKey, selectedDayOfWeek, state.habits]);
 
   const [newTodoTitle, setNewTodoTitle] = useState('');
   const checkInTimeOfDay: CheckInType = getCheckInTimeOfDay(isViewingToday ? new Date() : selectedDate);
