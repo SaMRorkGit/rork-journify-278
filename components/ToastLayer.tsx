@@ -47,7 +47,7 @@ export default function ToastLayer() {
     }
   }, [toast, visibleToast, opacity, translateY]);
 
-  const bottomOffset = useMemo(() => Math.max(insets.bottom + 74, 90), [insets.bottom]);
+  const bottomOffset = useMemo(() => Math.max(insets.bottom + 14, 18), [insets.bottom]);
 
   if (!visibleToast) {
     return null;
@@ -59,7 +59,7 @@ export default function ToastLayer() {
         style={[
           styles.toast,
           {
-            paddingBottom: bottomOffset,
+            bottom: bottomOffset,
             opacity,
             transform: [{ translateY }],
           },
@@ -79,15 +79,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   toast: {
-    width: '100%',
+    position: 'absolute',
+    left: 0,
+    right: 0,
     alignItems: 'center',
   },
   toastInner: {
     backgroundColor: 'rgba(5, 20, 29, 0.9)',
-    borderRadius: 28,
-    paddingVertical: 18,
-    paddingHorizontal: 28,
-    marginHorizontal: 24,
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 16,
+    maxWidth: 520,
+    alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
