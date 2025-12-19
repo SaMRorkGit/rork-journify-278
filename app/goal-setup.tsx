@@ -1867,11 +1867,12 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     position: 'relative',
     borderRadius: 18,
+    alignItems: 'center',
   },
   goalPreviewGlow: {
     position: 'absolute' as const,
-    left: 8,
-    right: 8,
+    left: 0,
+    right: 0,
     top: 6,
     bottom: 6,
     borderRadius: 18,
@@ -1884,10 +1885,13 @@ const styles = StyleSheet.create({
   goalPreviewCard: {
     backgroundColor: Colors.surface,
     borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: Colors.border,
+    width: '58%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   goalPreviewEyebrow: {
     fontSize: 11,
@@ -1902,5 +1906,6 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     color: Colors.text,
     lineHeight: 22,
+    textAlign: 'center' as const,
   },
 });
