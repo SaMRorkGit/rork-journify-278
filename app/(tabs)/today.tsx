@@ -360,16 +360,42 @@ export default function TodayScreen() {
   }, [selectedDateKey, state.todos]);
 
   const goalTasks = useMemo(() => {
+    const selectedKey = selectedDateKey;
+
     return state.goalTasks.filter(task => {
-      if (!task.dueDate) return true;
-      const taskDate = task.dueDate;
-      return taskDate === selectedDateKey || (!task.completed && taskDate < selectedDateKey);
+      const createdAt = new Date(task.createdAt);
+      const createdKey = Number.isNaN(createdAt.getTime()) ? '' : getDateKey(createdAt);
+
+      const dueKey = task.dueDate ?? '';
+
+      if (task.completed) {
+        if (!task.completedAt) return false;
+        const completedAt = new Date(task.completedAt);
+        const completedKey = Number.isNaN(completedAt.getTime()) ? '' : getDateKey(completedAt);
+        return completedKey === selectedKey;
+      }
+
+      if (createdKey && createdKey > selectedKey) {
+        return false;
+      }
+
+      if (!dueKey) {
+        return createdKey === selectedKey || (createdKey.length > 0 && createdKey < selectedKey);
+      }
+
+      return dueKey === selectedKey || (dueKey < selectedKey);
     });
   }, [selectedDateKey, state.goalTasks]);
 
   const habits = useMemo((): HabitWithComputed[] => {
     const scheduledHabits: HabitWithComputed[] = state.habits
-      .filter(habit => getHabitFrequencyForDay(habit, selectedDayOfWeek))
+      .filter(habit => {
+        const createdKey = getHabitCreatedDateKey(habit);
+        if (createdKey > selectedDateKey) {
+          return false;
+        }
+        return getHabitFrequencyForDay(habit, selectedDayOfWeek);
+      })
       .map(habit => {
         const completedToday = habit.completedDates.includes(selectedDateKey);
         const todayValue = habit.trackingData?.[selectedDateKey];
