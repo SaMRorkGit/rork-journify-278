@@ -1173,54 +1173,27 @@ type NorthStarQueryResult =
   | { kind: 'incomplete' }
   | { kind: 'technical' };
 
-const VISION_PROMPT = `You are Journify’s Vision Essence Generator.
+const VISION_PROMPT = `You are Journify’s North Star Assistant.
 
-Your job is to create a single short sentence that captures the essence of what the user wants in their life and who they want to become.
+Your task is to generate a short “North Star” statement based on the user’s vision statement.
 
-Use the following data:
-- The user’s vision statement
-- The user’s chosen life areas
-- The user’s active goals (1–3), with more emphasis on their designated focused goal.
-- The user’s "why" behind these goals
+The North Star should:
+• Capture the core essence of who the user wants to become or the life they want to live
+• Reuse the user’s original words and phrasing as much as possible
+• Avoid heavy paraphrasing or adding new ideas
+• Be extremely concise (ideally 8–14 words)
+• Feel personal, grounded, and identity-based
+• Read like a gentle reminder or anchor, not a goal or instruction
 
-Your output:
-- ONE short sentence (12–16 words max)
-- Calm, warm, supportive tone
-- Identity-based or life-experience based (NOT task-based)
-- Gentle and poetic, not motivational or forceful
-- Must feel like a unifying theme across all goals and life areas
-- MUST NOT list tasks or steps
-- MUST NOT include more than 3 abstract qualities
+IMPORTANT GUIDELINES:
+• Do NOT introduce new concepts not present in the original vision
+• Do NOT sound motivational or generic
+• Do NOT give advice or direction
+• Keep language simple and natural
+• If the vision is long, extract and condense rather than rewrite
+• If the vision is unclear, choose the clearest recurring theme and reflect it back
 
-Instructions:
-1. Identify the emotional and lifestyle themes across all inputs.
-2. Synthesize them into one essence.
-3. Describe the person the user is becoming OR the life they are creating.
-4. Keep it simple, beautiful, and easy to read.
-
-⭐ LOGIC RULES THE MODEL SHOULD FOLLOW
-Rule 1 — Identity > Goals
-Always focus on WHO they’re becoming, not WHAT they’re doing.
-Rule 2 — Essence > Specifics
-Blend themes into a general life direction.
-Rule 3 — Harmonize Multiple Goals
-If 3 goals exist:
-Extract the common emotional denominator (e.g., stability, growth, connection)
-Reflect that, not each goal separately
-
-Rule 4 — Consistency of Tone
-Always warm, gentle, calm — Journify tone.
-Rule 5 — No Pressure
-Avoid words like:
-must
-need
-should
-push
-Use:
-becoming
-creating
-growing
-moving toward`;
+Start with "I'm becoming..." or "I'm growing into..." Or "I'm..."`;
 
 function VisionEssenceCard({ state }: { state: AppState }) {
   const router = useRouter();
@@ -1251,27 +1224,8 @@ function VisionEssenceCard({ state }: { state: AppState }) {
   );
 
   const contextDetails = useMemo(() => {
-    const lines: string[] = [];
-    if (visionText) {
-      lines.push(`Vision statement: ${visionText}`);
-    }
-    if (lifeAreas.length > 0) {
-      lines.push(`Life areas: ${lifeAreas.join(', ')}`);
-    }
-    if (interests.length > 0) {
-      lines.push(`Interests: ${interests.join(', ')}`);
-    }
-    if (prioritizedGoals.length > 0) {
-      prioritizedGoals.forEach((goal, index) => {
-        const whyText = goal.why ? `Why: ${goal.why}` : 'Why: not specified';
-        const emphasis = goal.isFocusGoal ? 'Focus goal' : `Goal ${index + 1}`;
-        const area = goal.lifeArea ? `Life area: ${goal.lifeArea}` : undefined;
-        const detailsParts = [emphasis, goal.title, whyText, area].filter(Boolean);
-        lines.push(detailsParts.join(' | '));
-      });
-    }
-    return lines.join('\n');
-  }, [visionText, lifeAreas, interests, prioritizedGoals]);
+    return visionText ? `Vision statement: ${visionText}` : '';
+  }, [visionText]);
 
   const queryKeyPayload = useMemo(() => ({
     vision: visionText ?? '',
