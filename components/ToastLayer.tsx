@@ -99,7 +99,6 @@ const styles = StyleSheet.create({
     }),
   },
   toastText: {
-    flex: 1,
     color: Colors.text,
     fontSize: 15,
     fontWeight: '600',
