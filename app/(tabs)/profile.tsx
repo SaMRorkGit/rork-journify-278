@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,17 +6,6 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppState } from '../../contexts/AppStateContext';
 import Colors from '../../constants/colors';
-import type { LifeArea } from '../../types';
-
-type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
-
-const LIFE_AREA_CONFIG: Record<LifeArea, { label: string; icon: IoniconName; color: string }> = {
-  relationship: { label: 'Relationship', icon: 'heart-outline', color: '#FF6B9D' },
-  career: { label: 'Career', icon: 'briefcase-outline', color: '#4A90E2' },
-  health: { label: 'Health', icon: 'fitness-outline', color: '#47c447' },
-  finance: { label: 'Finance', icon: 'wallet-outline', color: '#F5A623' },
-  growth: { label: 'Growth', icon: 'leaf-outline', color: '#9B59B6' },
-};
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -45,25 +34,12 @@ export default function ProfileScreen() {
     router.push('/vision-editor');
   };
 
-  const handleAspirationPress = (lifeArea: LifeArea) => {
+  const handleAspirationsMenu = () => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    const aspiration = state.aspirations.find(a => a.lifeArea === lifeArea);
-    if (aspiration) {
-      router.push(`/aspiration-editor?lifeArea=${lifeArea}&aspirationId=${aspiration.id}`);
-    } else {
-      router.push(`/aspiration-editor?lifeArea=${lifeArea}`);
-    }
+    router.push('/aspirations' as any);
   };
-
-  const sortedLifeAreas = useMemo(() => {
-    const lifeAreasArray: LifeArea[] = ['relationship', 'career', 'health', 'finance', 'growth'];
-    if (profile?.lifeAreaRanking) {
-      return profile.lifeAreaRanking;
-    }
-    return lifeAreasArray;
-  }, [profile]);
 
   return (
     <>
@@ -120,45 +96,17 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Aspirations */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="flag-outline" size={20} color={Colors.text} />
-            <Text style={styles.sectionTitle}>Aspirations</Text>
-          </View>
-
-          <View style={styles.aspirationsList}>
-            {sortedLifeAreas.map(lifeArea => {
-              const config = LIFE_AREA_CONFIG[lifeArea];
-              const aspiration = state.aspirations.find(a => a.lifeArea === lifeArea);
-
-              return (
-                <TouchableOpacity
-                  key={lifeArea}
-                  style={styles.aspirationCard}
-                  onPress={() => handleAspirationPress(lifeArea)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.aspirationIconContainer, { backgroundColor: config.color + '20' }]}>
-                    <Ionicons name={config.icon} size={24} color={config.color} />
-                  </View>
-
-                  <View style={styles.aspirationContent}>
-                    <Text style={styles.aspirationLabel}>{config.label}</Text>
-                    {aspiration ? (
-                      <Text style={styles.aspirationText} numberOfLines={2}>
-                        {aspiration.description}
-                      </Text>
-                    ) : (
-                      <Text style={styles.aspirationEmptyText}>Tap to add aspiration</Text>
-                    )}
-                  </View>
-
-                  <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <TouchableOpacity style={styles.menuButton} onPress={handleAspirationsMenu} testID="profileAspirationsMenu">
+            <View style={styles.menuButtonLeft}>
+              <Ionicons name="flag-outline" size={20} color={Colors.text} />
+              <View style={styles.menuButtonTextWrap}>
+                <Text style={styles.menuButtonTitle}>Aspirations</Text>
+                <Text style={styles.menuButtonSubtitle}>Explore your life areas</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+          </TouchableOpacity>
         </View>
 
         {/* Settings */}
@@ -294,44 +242,34 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontWeight: '500',
   },
-  aspirationsList: {
-    gap: 12,
-  },
-  aspirationCard: {
+  menuButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+  menuButtonLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-  },
-  aspirationIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  aspirationContent: {
     flex: 1,
-    gap: 4,
   },
-  aspirationLabel: {
-    fontSize: 15,
+  menuButtonTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  menuButtonTitle: {
+    fontSize: 16,
     color: Colors.text,
     fontWeight: '600',
   },
-  aspirationText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  aspirationEmptyText: {
+  menuButtonSubtitle: {
     fontSize: 13,
     color: Colors.textSecondary,
-    fontStyle: 'italic',
   },
   settingsButton: {
     flexDirection: 'row',
