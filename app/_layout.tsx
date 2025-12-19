@@ -30,8 +30,8 @@ function RootLayoutNav() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="profile-details" options={{ presentation: 'modal' }} />
-      <Stack.Screen name="vision-editor" options={{ presentation: 'modal', headerShown: false }} />
-      <Stack.Screen name="aspiration-editor" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="vision-editor" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="aspiration-editor" options={{ presentation: 'modal' }} />
       <Stack.Screen name="goal-details" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="journal-compose" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="journal-entry/[id]" options={{ headerShown: false }} />

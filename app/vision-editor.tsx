@@ -1,6 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, Alert } from 'react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppState } from '../contexts/AppStateContext';
@@ -48,6 +49,23 @@ export default function VisionEditorScreen() {
             backgroundColor: Colors.surface,
           },
           headerTintColor: Colors.text,
+          headerLeft: () => (
+            <TouchableOpacity
+              testID="visionEditorBack"
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace('/(tabs)/profile');
+                }
+              }}
+              activeOpacity={0.7}
+              style={styles.headerBack}
+            >
+              <ArrowLeft size={20} color={Colors.text} />
+              <Text style={styles.headerBackText}>Back</Text>
+            </TouchableOpacity>
+          ),
         }} 
       />
       <ScrollView
@@ -153,5 +171,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600' as const,
     color: Colors.surface,
+  },
+  headerBack: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+  },
+  headerBackText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: Colors.text,
   },
 });
