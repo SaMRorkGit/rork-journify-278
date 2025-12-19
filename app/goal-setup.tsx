@@ -5,6 +5,7 @@ import { ChevronLeft, Plus, X, CheckCircle2, RefreshCw, Sparkles, Heart, Briefca
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { useMutation } from '@tanstack/react-query';
 import { useAppState } from '../contexts/AppStateContext';
@@ -715,20 +716,22 @@ Return ONLY a JSON object:
                       LIFE_AREA_THEMES.health;
 
                     return (
-                      <>
-                        <View
-                          style={[
-                            styles.goalPreviewGlow,
-                            {
-                              backgroundColor: theme.color,
-                              shadowColor: theme.glow,
-                            },
-                          ]}
+                      <LinearGradient
+                        colors={[Colors.tealSoft, Colors.tealDeep, Colors.bgDeep]}
+                        start={{ x: 0.08, y: 0.06 }}
+                        end={{ x: 0.9, y: 1 }}
+                        style={styles.goalPreviewCard}
+                      >
+                        <LinearGradient
+                          colors={['rgba(0, 0, 0, 0.0)', 'rgba(0, 0, 0, 0.55)']}
+                          start={{ x: 0.5, y: 0.15 }}
+                          end={{ x: 0.5, y: 1 }}
+                          style={styles.goalPreviewVignette}
                         />
-                        <View style={styles.goalPreviewCard}>
+                        <View style={styles.goalPreviewInner}>
                           <Text style={styles.goalPreviewText}>{goalTitle}</Text>
                         </View>
-                      </>
+                      </LinearGradient>
                     );
                   })()}
                 </View>
@@ -761,20 +764,22 @@ Return ONLY a JSON object:
                       LIFE_AREA_THEMES.health;
 
                     return (
-                      <>
-                        <View
-                          style={[
-                            styles.goalPreviewGlow,
-                            {
-                              backgroundColor: theme.color,
-                              shadowColor: theme.glow,
-                            },
-                          ]}
+                      <LinearGradient
+                        colors={[Colors.tealSoft, Colors.tealDeep, Colors.bgDeep]}
+                        start={{ x: 0.08, y: 0.06 }}
+                        end={{ x: 0.9, y: 1 }}
+                        style={styles.goalPreviewCard}
+                      >
+                        <LinearGradient
+                          colors={['rgba(0, 0, 0, 0.0)', 'rgba(0, 0, 0, 0.55)']}
+                          start={{ x: 0.5, y: 0.15 }}
+                          end={{ x: 0.5, y: 1 }}
+                          style={styles.goalPreviewVignette}
                         />
-                        <View style={styles.goalPreviewCard}>
+                        <View style={styles.goalPreviewInner}>
                           <Text style={styles.goalPreviewText}>{goalTitle}</Text>
                         </View>
-                      </>
+                      </LinearGradient>
                     );
                   })()}
                 </View>
@@ -1912,29 +1917,34 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
   },
-  goalPreviewGlow: {
-    position: 'absolute' as const,
-    left: 0,
-    right: 0,
-    top: 6,
-    bottom: 6,
-    borderRadius: 18,
-    opacity: 0.22,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 22,
-    elevation: 10,
-  },
   goalPreviewCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderRadius: 26,
+    paddingHorizontal: 18,
+    paddingVertical: 24,
     width: '58%',
+    minHeight: 112,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    shadowColor: 'rgba(0,0,0,0.55)',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 1,
+    shadowRadius: 26,
+    elevation: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+  },
+  goalPreviewVignette: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  goalPreviewInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
   },
   goalPreviewEyebrow: {
     fontSize: 11,
@@ -1945,10 +1955,10 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   goalPreviewText: {
-    fontSize: 16,
-    fontWeight: '600' as const,
+    fontSize: 17,
+    fontWeight: '700' as const,
     color: Colors.text,
-    lineHeight: 22,
+    lineHeight: 24,
     textAlign: 'center' as const,
   },
   visionPreviewContainer: {
