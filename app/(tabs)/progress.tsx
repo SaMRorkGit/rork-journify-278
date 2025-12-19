@@ -56,6 +56,7 @@ export default function InsightsScreen() {
   const themeSnapshotSerialized = themeExtractionSnapshot.serialized;
   const themeSnapshotKey = themeExtractionSnapshot.cacheKey;
   const shouldGenerateAiThemes = themeExtractionSnapshot.hasSignals;
+  const hasActivityThisWeek = weeklyMetrics.shownDaysCount > 0;
   const fallbackLifeAreaThemes = useMemo(() => deriveLifeAreaThemes(state), [state]);
 
   const activeGoals = useMemo(
@@ -172,7 +173,7 @@ ${themeSnapshotSerialized}`;
   const lifeAreaThemes = aiThemes.length > 0 ? aiThemes : fallbackLifeAreaThemes;
   const themesLoading = shouldGenerateAiThemes && (isThemesFetching || isThemesRefetching);
   const themeError = shouldGenerateAiThemes && isThemesError;
-  const showThemesSection = themesLoading || themeError || lifeAreaThemes.length > 0;
+  const showThemesSection = hasActivityThisWeek && (themesLoading || themeError || lifeAreaThemes.length > 0);
 
   const themesPerRow = useMemo(() => {
     if (themesCardWidth === 0 || lifeAreaThemes.length === 0) {
@@ -199,7 +200,6 @@ ${themeSnapshotSerialized}`;
     return width > 140 ? width : 140;
   }, [themesCardWidth, themesPerRow]);
   const canGoForward = weekOffset < 0;
-  const hasActivityThisWeek = weeklyMetrics.shownDaysCount > 0;
 
   const statItems = useMemo(
     () => [
