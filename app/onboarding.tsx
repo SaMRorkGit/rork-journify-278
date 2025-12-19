@@ -81,6 +81,12 @@ export default function OnboardingScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const breathAnim = useRef(new Animated.Value(0)).current;
 
+  const welcomeParagraphAnims = useRef<Animated.Value[]>([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
+
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -88,6 +94,23 @@ export default function OnboardingScreen() {
       useNativeDriver: true,
     }).start();
   }, [fadeAnim]);
+
+  useEffect(() => {
+    if (step !== 'welcome') return;
+
+    welcomeParagraphAnims.forEach((a) => a.setValue(0));
+
+    Animated.stagger(
+      220,
+      welcomeParagraphAnims.map((anim) =>
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 520,
+          useNativeDriver: true,
+        })
+      )
+    ).start();
+  }, [step, welcomeParagraphAnims]);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -354,15 +377,59 @@ export default function OnboardingScreen() {
                   Welcome to <Text style={styles.welcomeBrand}>Journify</Text>
                 </Text>
 
-                <Text style={styles.welcomeSubText} testID="onboarding-welcome-subtext-1">
-                  This isn’t another productivity app.
-                </Text>
+                <Animated.View
+                  style={{
+                    opacity: welcomeParagraphAnims[0],
+                    transform: [
+                      {
+                        translateY: welcomeParagraphAnims[0].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [10, 0],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <Text style={styles.welcomeParagraph} testID="onboarding-welcome-subtext-1">
+                    This isn’t another productivity app.
+                  </Text>
+                </Animated.View>
 
-                <Text style={[styles.welcomeSubText, styles.welcomeSubTextSpaced]} testID="onboarding-welcome-subtext-2">
-                  This is your space to grow gently,
-                  {'\n'}
-                  aligned with the person you want to be.
-                </Text>
+                <Animated.View
+                  style={{
+                    opacity: welcomeParagraphAnims[1],
+                    transform: [
+                      {
+                        translateY: welcomeParagraphAnims[1].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [10, 0],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <Text style={styles.welcomeParagraph} testID="onboarding-welcome-subtext-2">
+                    This is your space to grow gently,
+                  </Text>
+                </Animated.View>
+
+                <Animated.View
+                  style={{
+                    opacity: welcomeParagraphAnims[2],
+                    transform: [
+                      {
+                        translateY: welcomeParagraphAnims[2].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [10, 0],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <Text style={styles.welcomeParagraph} testID="onboarding-welcome-subtext-3">
+                    aligned with the person you want to be.
+                  </Text>
+                </Animated.View>
               </Animated.View>
             </View>
           )}
@@ -981,14 +1048,12 @@ const styles = StyleSheet.create({
   welcomeBrand: {
     color: Colors.primary,
   },
-  welcomeSubText: {
+  welcomeParagraph: {
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 26,
     color: Colors.textSecondary,
     fontWeight: '500' as const,
-  },
-  welcomeSubTextSpaced: {
-    marginTop: 10,
+    marginTop: 18,
   },
   momentumCard: {
     backgroundColor: Colors.surface,
