@@ -174,13 +174,22 @@ export default function TodayScreen() {
   const selectedDayOfWeek = useMemo(() => selectedDate.getDay(), [selectedDate]);
   const isViewingToday = useMemo(() => getDateKey(new Date()) === selectedDateKey, [selectedDateKey]);
 
-  const selectedDateHeaderText = useMemo(() => {
+  const selectedWeekdayText = useMemo(() => {
     return selectedDate.toLocaleDateString('en-US', {
       weekday: 'long',
+    });
+  }, [selectedDate]);
+
+  const selectedMonthDayText = useMemo(() => {
+    return selectedDate.toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
     });
   }, [selectedDate]);
+
+  const selectedDateHeaderText = useMemo(() => {
+    return `${selectedWeekdayText}, ${selectedMonthDayText}`;
+  }, [selectedMonthDayText, selectedWeekdayText]);
 
   const todos = useMemo(() => state.todos, [state.todos]);
 
@@ -540,9 +549,14 @@ export default function TodayScreen() {
                   </Text>
                 </>
               ) : (
-                <Text style={styles.headerTitle} testID="today-header-selected-date">
-                  {selectedDateHeaderText}
-                </Text>
+                <>
+                  <Text style={styles.headerTitle} testID="today-header-selected-weekday">
+                    {selectedWeekdayText}
+                  </Text>
+                  <Text style={styles.headerSubtitle} testID="today-header-selected-monthday">
+                    {selectedMonthDayText}
+                  </Text>
+                </>
               )}
             </View>
             <View style={styles.levelBadgeContainer}>
