@@ -8,6 +8,7 @@ import ToastLayer from '@/components/ToastLayer';
 import { AppStateProvider } from '@/contexts/AppStateContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import Colors from '@/constants/colors';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -15,7 +16,16 @@ const queryClient = new QueryClient();
 
 function RootLayoutNav() {
   return (
-    <Stack screenOptions={{ headerBackTitle: 'Back' }}>
+    <Stack
+      screenOptions={{
+        headerBackTitle: 'Back',
+        headerStyle: { backgroundColor: Colors.background },
+        headerTintColor: Colors.textMain,
+        headerTitleStyle: { color: Colors.textMain },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: Colors.background },
+      }}
+    >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="reflection-results" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="habit-setup" options={{ presentation: 'modal', headerShown: false }} />
