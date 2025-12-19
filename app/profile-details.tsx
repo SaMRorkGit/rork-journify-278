@@ -7,15 +7,6 @@ import { useState } from 'react';
 import { useAppState } from '../contexts/AppStateContext';
 import Colors from '../constants/colors';
 
-const GOAL_LABELS: Record<string, string> = {
-  'understand': 'Understand myself better',
-  'growth': 'Track personal growth',
-  'achieve': 'Achieve my goals and dreams',
-  'productive': 'Be more productive',
-  'organized': 'Be more organized',
-  'manage': 'Manage emotions and stress',
-  'habits': 'Build habits and consistency',
-};
 
 const AGE_GROUPS = [
   { value: '18-24', label: '18-24' },
@@ -40,15 +31,6 @@ const INTEREST_OPTIONS = [
   'Writing', 'Attending live events', 'Socializing with friends', 'Cars',
 ];
 
-const GOAL_OPTIONS = [
-  { value: 'understand', label: 'Understand myself better' },
-  { value: 'growth', label: 'Track personal growth' },
-  { value: 'achieve', label: 'Achieve my goals and dreams' },
-  { value: 'productive', label: 'Be more productive' },
-  { value: 'organized', label: 'Be more organized' },
-  { value: 'manage', label: 'Manage emotions and stress' },
-  { value: 'habits', label: 'Build habits and consistency' },
-];
 
 export default function ProfileDetailsScreen() {
   const insets = useSafeAreaInsets();
@@ -60,9 +42,7 @@ export default function ProfileDetailsScreen() {
   const [editAgeGroup, setEditAgeGroup] = useState(profile?.ageGroup || '');
   const [editGender, setEditGender] = useState(profile?.gender || '');
   const [editInterests, setEditInterests] = useState<string[]>(profile?.interests || []);
-  const [editGoals, setEditGoals] = useState<string[]>(profile?.goals || []);
   const [customInterest, setCustomInterest] = useState('');
-  const [customGoal, setCustomGoal] = useState('');
 
   const handleEdit = () => {
     if (Platform.OS !== 'web') {
@@ -79,9 +59,7 @@ export default function ProfileDetailsScreen() {
     setEditAgeGroup(profile?.ageGroup || '');
     setEditGender(profile?.gender || '');
     setEditInterests(profile?.interests || []);
-    setEditGoals(profile?.goals || []);
     setCustomInterest('');
-    setCustomGoal('');
     setIsEditing(false);
   };
 
@@ -100,7 +78,6 @@ export default function ProfileDetailsScreen() {
       ageGroup: editAgeGroup as any,
       gender: editGender as any,
       interests: editInterests,
-      goals: editGoals,
     });
     
     setIsEditing(false);
@@ -121,20 +98,6 @@ export default function ProfileDetailsScreen() {
     }
   };
 
-  const toggleGoal = (goal: string) => {
-    setEditGoals(prev =>
-      prev.includes(goal)
-        ? prev.filter(g => g !== goal)
-        : [...prev, goal]
-    );
-  };
-
-  const addCustomGoal = () => {
-    if (customGoal.trim() && !editGoals.includes(customGoal.trim())) {
-      setEditGoals(prev => [...prev, customGoal.trim()]);
-      setCustomGoal('');
-    }
-  };
 
   return (
     <>
@@ -169,18 +132,19 @@ export default function ProfileDetailsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
-          
+          <Text style={styles.sectionTitle}>Profile Information</Text>
+
           {isEditing ? (
             <>
               <View style={styles.editField}>
-                <Text style={styles.editLabel}>Name</Text>
+                <Text style={styles.editLabel}>User Name</Text>
                 <TextInput
                   style={styles.editInput}
                   placeholder="Enter your name"
                   placeholderTextColor={Colors.textSecondary}
                   value={editName}
                   onChangeText={setEditName}
+                  testID="profileDetailsNameInput"
                 />
               </View>
 
@@ -192,6 +156,7 @@ export default function ProfileDetailsScreen() {
                       key={group.value}
                       style={[styles.editOption, editAgeGroup === group.value && styles.editOptionSelected]}
                       onPress={() => setEditAgeGroup(group.value)}
+                      testID={`profileDetailsAgeGroupOption-${group.value}`}
                     >
                       <Text style={[styles.editOptionText, editAgeGroup === group.value && styles.editOptionTextSelected]}>
                         {group.label}
@@ -209,6 +174,7 @@ export default function ProfileDetailsScreen() {
                       key={g.value}
                       style={[styles.editOption, editGender === g.value && styles.editOptionSelected]}
                       onPress={() => setEditGender(g.value)}
+                      testID={`profileDetailsGenderOption-${g.value}`}
                     >
                       <Text style={[styles.editOptionText, editGender === g.value && styles.editOptionTextSelected]}>
                         {g.label}
@@ -220,149 +186,108 @@ export default function ProfileDetailsScreen() {
             </>
           ) : (
             <>
-              {profile?.name && (
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Name</Text>
-                  <Text style={styles.infoValue}>{profile.name}</Text>
-                </View>
-              )}
-              
-              {profile?.ageGroup && (
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Age Group</Text>
-                  <Text style={styles.infoValue}>
-                    {AGE_GROUPS.find(g => g.value === profile.ageGroup)?.label || profile.ageGroup}
-                  </Text>
-                </View>
-              )}
-              
-              {profile?.gender && (
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Gender</Text>
-                  <Text style={styles.infoValue}>
-                    {GENDERS.find(g => g.value === profile.gender)?.label || 'Prefer not to say'}
-                  </Text>
-                </View>
-              )}
+              <View style={styles.infoRow} testID="profileDetailsNameRow">
+                <Text style={styles.infoLabel}>User Name</Text>
+                <Text style={styles.infoValue}>{profile?.name?.trim() ? profile.name : 'Not set'}</Text>
+              </View>
+
+              <View style={styles.infoRow} testID="profileDetailsAgeGroupRow">
+                <Text style={styles.infoLabel}>Age Group</Text>
+                <Text style={styles.infoValue}>
+                  {profile?.ageGroup
+                    ? AGE_GROUPS.find(g => g.value === profile.ageGroup)?.label || profile.ageGroup
+                    : 'Not set'}
+                </Text>
+              </View>
+
+              <View style={styles.infoRow} testID="profileDetailsGenderRow">
+                <Text style={styles.infoLabel}>Gender</Text>
+                <Text style={styles.infoValue}>
+                  {profile?.gender ? GENDERS.find(g => g.value === profile.gender)?.label || profile.gender : 'Not set'}
+                </Text>
+              </View>
             </>
           )}
         </View>
 
-        {(isEditing || (profile?.interests && profile.interests.length > 0)) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Interests & Hobbies</Text>
-            {isEditing ? (
-              <>
-                <View style={styles.chipContainer}>
-                  {INTEREST_OPTIONS.map((interest) => (
-                    <TouchableOpacity
-                      key={interest}
-                      style={[styles.chip, editInterests.includes(interest) && styles.chipSelected]}
-                      onPress={() => toggleInterest(interest)}
-                    >
-                      <Text style={[styles.chipText, editInterests.includes(interest) && styles.chipTextSelected]}>
-                        {interest}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <View style={styles.customInputContainer}>
-                  <TextInput
-                    style={styles.customInput}
-                    placeholder="Add your own..."
-                    placeholderTextColor={Colors.textSecondary}
-                    value={customInterest}
-                    onChangeText={setCustomInterest}
-                    onSubmitEditing={addCustomInterest}
-                  />
-                  <TouchableOpacity style={styles.addButton} onPress={addCustomInterest}>
-                    <Text style={styles.addButtonText}>Add</Text>
-                  </TouchableOpacity>
-                </View>
-                {editInterests.filter(i => !INTEREST_OPTIONS.includes(i)).length > 0 && (
-                  <View style={[styles.chipContainer, { marginTop: 12 }]}>
-                    {editInterests.filter(i => !INTEREST_OPTIONS.includes(i)).map((interest) => (
-                      <View key={interest} style={[styles.chip, styles.chipSelected]}>
-                        <Text style={[styles.chipText, styles.chipTextSelected]}>{interest}</Text>
-                        <TouchableOpacity onPress={() => toggleInterest(interest)} style={{ marginLeft: 6 }}>
-                          <X size={14} color={Colors.surface} />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </>
-            ) : (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Interests & Hobbies</Text>
+          {isEditing ? (
+            <>
               <View style={styles.chipContainer}>
-                {profile?.interests?.map((interest, index) => (
-                  <View key={index} style={styles.chip}>
-                    <Text style={styles.chipText}>{interest}</Text>
-                  </View>
+                {INTEREST_OPTIONS.map((interest) => (
+                  <TouchableOpacity
+                    key={interest}
+                    style={[styles.chip, editInterests.includes(interest) && styles.chipSelected]}
+                    onPress={() => toggleInterest(interest)}
+                    testID={`profileDetailsInterestChip-${interest}`}
+                  >
+                    <Text style={[styles.chipText, editInterests.includes(interest) && styles.chipTextSelected]}>
+                      {interest}
+                    </Text>
+                  </TouchableOpacity>
                 ))}
               </View>
-            )}
-          </View>
-        )}
-
-        {(isEditing || (profile?.goals && profile.goals.length > 0)) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>What I Want to Accomplish</Text>
-            {isEditing ? (
-              <>
-                <View style={styles.goalsList}>
-                  {GOAL_OPTIONS.map((goal) => (
-                    <TouchableOpacity
-                      key={goal.value}
-                      style={[styles.editOption, editGoals.includes(goal.value) && styles.editOptionSelected]}
-                      onPress={() => toggleGoal(goal.value)}
-                    >
-                      <Text style={[styles.editOptionText, editGoals.includes(goal.value) && styles.editOptionTextSelected]}>
-                        {goal.label}
-                      </Text>
-                    </TouchableOpacity>
+              <View style={styles.customInputContainer}>
+                <TextInput
+                  style={styles.customInput}
+                  placeholder="Add your own..."
+                  placeholderTextColor={Colors.textSecondary}
+                  value={customInterest}
+                  onChangeText={setCustomInterest}
+                  onSubmitEditing={addCustomInterest}
+                  testID="profileDetailsCustomInterestInput"
+                />
+                <TouchableOpacity style={styles.addButton} onPress={addCustomInterest} testID="profileDetailsCustomInterestAdd">
+                  <Text style={styles.addButtonText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+              {editInterests.filter(i => !INTEREST_OPTIONS.includes(i)).length > 0 && (
+                <View style={[styles.chipContainer, { marginTop: 12 }]}>
+                  {editInterests.filter(i => !INTEREST_OPTIONS.includes(i)).map((interest) => (
+                    <View key={interest} style={[styles.chip, styles.chipSelected]}>
+                      <Text style={[styles.chipText, styles.chipTextSelected]}>{interest}</Text>
+                      <TouchableOpacity onPress={() => toggleInterest(interest)} style={{ marginLeft: 6 }} testID={`profileDetailsRemoveCustomInterest-${interest}`}>
+                        <X size={14} color={Colors.surface} />
+                      </TouchableOpacity>
+                    </View>
                   ))}
                 </View>
-                <View style={styles.customInputContainer}>
-                  <TextInput
-                    style={styles.customInput}
-                    placeholder="Other (please specify)"
-                    placeholderTextColor={Colors.textSecondary}
-                    value={customGoal}
-                    onChangeText={setCustomGoal}
-                    onSubmitEditing={addCustomGoal}
-                  />
-                  <TouchableOpacity style={styles.addButton} onPress={addCustomGoal}>
-                    <Text style={styles.addButtonText}>Add</Text>
-                  </TouchableOpacity>
+              )}
+            </>
+          ) : profile?.interests && profile.interests.length > 0 ? (
+            <View style={styles.chipContainer} testID="profileDetailsInterestsList">
+              {profile.interests.map((interest, index) => (
+                <View key={`${interest}-${index}`} style={styles.chip}>
+                  <Text style={styles.chipText}>{interest}</Text>
                 </View>
-                {editGoals.filter(g => !GOAL_OPTIONS.some(opt => opt.value === g)).length > 0 && (
-                  <View style={[styles.chipContainer, { marginTop: 12 }]}>
-                    {editGoals.filter(g => !GOAL_OPTIONS.some(opt => opt.value === g)).map((goal) => (
-                      <View key={goal} style={[styles.chip, styles.chipSelected]}>
-                        <Text style={[styles.chipText, styles.chipTextSelected]}>{goal}</Text>
-                        <TouchableOpacity onPress={() => toggleGoal(goal)} style={{ marginLeft: 6 }}>
-                          <X size={14} color={Colors.surface} />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </>
-            ) : (
-              <View style={styles.goalsList}>
-                {profile?.goals?.map((goal, index) => {
-                  const goalLabel = GOAL_LABELS[goal] || goal;
-                  return (
-                    <View key={index} style={styles.goalItem}>
-                      <View style={styles.goalBullet} />
-                      <Text style={styles.goalText}>{goalLabel}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-        )}
+              ))}
+            </View>
+          ) : (
+            <View style={styles.infoRow} testID="profileDetailsInterestsEmpty">
+              <Text style={styles.infoLabel}>Interests & Hobbies</Text>
+              <Text style={styles.infoValue}>Not set</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Identity tags</Text>
+          {profile?.identityTags && profile.identityTags.length > 0 ? (
+            <View style={styles.chipContainer} testID="profileDetailsIdentityTagsList">
+              {profile.identityTags.map((tag, index) => (
+                <View key={`${tag}-${index}`} style={styles.chip}>
+                  <Text style={styles.chipText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.infoRow} testID="profileDetailsIdentityTagsEmpty">
+              <Text style={styles.infoLabel}>Identity tags</Text>
+              <Text style={styles.infoValue}>Not set</Text>
+            </View>
+          )}
+        </View>
 
         {profile?.lifeAreaRanking && profile.lifeAreaRanking.length > 0 && (
           <View style={styles.section}>
@@ -451,32 +376,6 @@ const styles = StyleSheet.create({
   },
   chipTextSelected: {
     color: Colors.surface,
-  },
-  goalsList: {
-    gap: 12,
-  },
-  goalItem: {
-    flexDirection: 'row' as const,
-    alignItems: 'flex-start' as const,
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  goalBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.primary,
-    marginTop: 6,
-    marginRight: 12,
-  },
-  goalText: {
-    flex: 1,
-    fontSize: 15,
-    color: Colors.text,
-    lineHeight: 22,
   },
   rankingList: {
     gap: 12,
