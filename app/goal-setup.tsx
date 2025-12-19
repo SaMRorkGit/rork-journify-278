@@ -955,7 +955,6 @@ Return ONLY a JSON object:
                         >
                           {visionText ? visionText : 'Tap to add / edit your vision'}
                         </Text>
-                        <Text style={styles.visionPreviewHint}>Tap to edit</Text>
                       </View>
                     </>
                   );
