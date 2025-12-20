@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { generateText } from '@rork-ai/toolkit-sdk';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppState } from '../../contexts/AppStateContext';
 import type { Todo, MoodType, DailyCheckIn, CheckInType, AppState, Habit } from '../../types';
 import Colors from '../../constants/colors';
@@ -709,6 +710,19 @@ export default function TodayScreen() {
   const { data: dailyQuote, isFetching: isDailyQuoteFetching, isError: isDailyQuoteError } = useQuery({
     queryKey: ['daily-quote', todayDateKey, dailyQuoteContext],
     queryFn: async () => {
+      const storageKey = `daily-quote:${todayDateKey}`;
+
+      try {
+        const stored = await AsyncStorage.getItem(storageKey);
+        if (stored && stored.trim().length > 0) {
+          console.log('[DailyQuote] Using cached daily quote from storage', { todayDateKey });
+          return stored;
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn('[DailyQuote] Failed reading daily quote from storage; will regenerate', { todayDateKey, message });
+      }
+
       console.log('[DailyQuote] Generating daily quote', { todayDateKey, dailyQuoteContext });
       const response = await generateText({
         messages: [
@@ -725,6 +739,10 @@ CONTEXT AWARENESS INPUT (optional):
 RECENT QUOTES (if any):
 - Unknown (not provided)
 
+IMPORTANT:
+- This quote must remain the same for the entire day.
+- It should not depend on the current time within the day.
+
 Remember: output ONLY the quote, wrapped in “double quotes”, with optional minimal attribution.`,
           },
         ],
@@ -739,12 +757,21 @@ Remember: output ONLY the quote, wrapped in “double quotes”, with optional m
         throw new Error('Empty daily quote response');
       }
 
+      try {
+        await AsyncStorage.setItem(storageKey, cleaned);
+        console.log('[DailyQuote] Stored daily quote for day', { todayDateKey });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn('[DailyQuote] Failed saving daily quote to storage', { todayDateKey, message });
+      }
+
       return cleaned;
     },
-    staleTime: 1000 * 60 * 60 * 24,
-    gcTime: 1000 * 60 * 60 * 24,
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 60 * 24 * 30,
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const microCopyText = useMemo(() => {
